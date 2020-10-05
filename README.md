@@ -1,3 +1,3 @@
-DS course \n
-Project 2 \n
+DS course
+Project 2
 Simple Distributed File System
