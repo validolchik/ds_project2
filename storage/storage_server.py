@@ -3,12 +3,12 @@ from threading import Thread
 
 
 SEPARATOR = "][" # separator for filename and size transferring
-BUFFER_SIZE = 2048 # send 2048 bytes each time step
+BUFFER_SIZE = 2048 
 
 
 COMMAND_PORT = 3500 #port for commands from name server
-
-
+DISCOVER_PORT = 3501
+DISCOVER_RESPONSE_PORT = 3502
 
 class Storage(Thread):
 
@@ -40,8 +40,7 @@ class Storage(Thread):
 	parse and execute the message
 	'''
 	def parse(self, message):
-		types ={'disc':self.discover,
-				'crf':self.create,
+		types ={'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
 				'rmdir':self.deldir,
@@ -53,15 +52,14 @@ class Storage(Thread):
 		mes = message.split('][')
 		rtype = mes[0]
 		res = 0
-		if len(mes) == 2:
+		if len(mes) == 1:
+			res = types[mes[0]]()
+		elif len(mes) == 2:
 			res = types[mes[0]](mes[1])
-		else:
+		elif len(mes) == 3:
 			res = types[mes[0]](mes[1], mes[2])
 		lenght = len(res)
 		return rtype, lenght, res
-
-	def discover(self):
-		return 0
 
 	''' Create new empty file '''
 	def create(self, filename):
@@ -73,13 +71,13 @@ class Storage(Thread):
 	Download it to client host
 	'''
 	def download(self, filename):
-		pass
+		return 0
 
 	''' 
 	Upload file to DFS
 	'''
 	def upload(self, filename):
-		pass
+		return 0
 
 	''' 
 	Delete existing file from DFS
@@ -146,14 +144,34 @@ class Storage(Thread):
 	List all directories and files in the system
 	'''
 	def fsTree(self,):
-		pass
+		return 0
+
+
+
+def heart():
+	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+	sock.bind(('', DISCOVER_PORT))
+	#sock.listen()
+	while True:
+		data, addr = sock.recvfrom(BUFFER_SIZE)
+		host, port = addr
+		mess = b'Alive'
+		resp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		resp_sock.sendto(mess, (host, DISCOVER_RESPONSE_PORT))
+
 
 
 def main():
 	#initialize command socket and start listening
-	command_sock = socket.socket()
+	command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	command_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 	command_sock.bind(('', COMMAND_PORT))
 	command_sock.listen()
+
+	#start a thread that will answer roll calls
+	hart = Thread(target = heart)
+	hart.start()
 	
 	#wait for connection
 	while True:

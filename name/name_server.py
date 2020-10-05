@@ -1,21 +1,60 @@
 import socket, os, sys
-
+from threading import Thread
 
 SEPARATOR = "][" # separator for filename and size transferring
-BUFFER_SIZE = 4096 # send 4096 bytes each time step
+BUFFER_SIZE = 2048
 
-# s = socket.socket()
-# s.connect((host, port))
-# s.send(f"{filename}{SEPARATOR}{filesize}".encode())
-# s.sendall(bytes_read)
+CLIENT_PORT = 6235
+COMMAND_PORT = 3500
+DISCOVER_PORT = 3501
+DISCOVER_RESPONSE_PORT = 3502
 
 class NameServer():
-	
+
 	'''
 	Initialize the client storage on a new system
 	Remove any existing file in the dfs root dir and return available size 
 	'''
 	def __init__(self):
+		self.storages = []
+		listener = Thread(target = self.listen)
+		listener.start()
+		self.discover()
+
+
+	'''
+	Listen for replies to a broadcast
+	'''
+	def listen(self):
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.bind(('', DISCOVER_RESPONSE_PORT))
+		while True:
+			data, addr = sock.recvfrom(BUFFER_SIZE)
+			host, port = addr
+			if host not in self.storages:
+				self.storages.append(host)
+				print(self.storages)
+	
+	'''
+	broadcast discovery message
+	'''
+	def discover(self):
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+		sock.sendto(b'discovery', ('<broadcast>', DISCOVER_PORT))
+
+
+	def connect(self, sock:socket.socket):
+		self.sock = sock
+
+	#connection lost or closed
+	def close(self):
+		self.sock.close()
+		print('Client disconected')
+
+	def run(self):
 		pass
 
 	''' Create new empty file '''
@@ -86,3 +125,23 @@ class NameServer():
 		pass
 
 
+
+
+def main():
+	#initialize command socket and start listening
+	client_sock = socket.socket()
+	client_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	client_sock.bind(('', CLIENT_PORT))
+	client_sock.listen()
+	
+	ns = NameServer()
+
+	#wait for connection
+	while True:
+		con, addr = client_sock.accept()
+		print(str(addr) + 'connected')
+		ns.connect(con)
+
+
+if __name__ == "__main__":
+	main()
