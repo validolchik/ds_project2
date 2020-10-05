@@ -32,6 +32,7 @@ class NameServer():
 		while True:
 			data, addr = sock.recvfrom(BUFFER_SIZE)
 			host, port = addr
+			#for evere response add ip to the table
 			if host not in self.storages:
 				self.storages.append(host)
 				print(self.storages)
