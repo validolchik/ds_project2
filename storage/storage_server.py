@@ -19,7 +19,7 @@ class Storage(Thread):
 	def __init__(self, command_sock: socket.socket):
 		super().__init__(daemon=True)
 		self.command_sock = command_sock
-		self.current_dir = '/var/data'#to avoid using cd
+		self.current_dir = '/var/data/'#to avoid using cd
 
 
 	#connection lost or closed
@@ -30,8 +30,38 @@ class Storage(Thread):
 
 	#main thread
 	def run(self):
-		mess = self.command_sock.recv(BUFFER_SIZE).decode()
-		print(mess)
+		mess = self.command_sock.recv(BUFFER_SIZE).decode('utf-8')
+		rtype, length, res = self.parse(mess)
+		resp = f'{rtype}][{length}][{res}'
+		self.command_sock.send(resp.encode('utf-8'))
+		self.close()
+
+	'''
+	parse and execute the message
+	'''
+	def parse(self, message):
+		types ={'disc':self.discover,
+				'crf':self.create,
+				'cpf':self.copy,
+				'mvf':self.move,
+				'rmdir':self.deldir,
+				'mkdir':self.mkdir,
+				'opdir':self.opendir,
+				'down':self.download,
+				'up':self.upload
+				}
+		mes = message.split('][')
+		rtype = mes[0]
+		res = 0
+		if len(mes) == 2:
+			res = types[mes[0]](mes[1])
+		else:
+			res = types[mes[0]](mes[1], mes[2])
+		lenght = len(res)
+		return rtype, lenght, res
+
+	def discover(self):
+		return 0
 
 	''' Create new empty file '''
 	def create(self, filename):
@@ -96,9 +126,7 @@ class Storage(Thread):
 	List the files in the directory
 	'''
 	def readdir(self, dir_path):
-		stream = os.popen('ls -p '+ self.current_dir+dir_path)
-		out = stream.read()
-		return out
+		return os.listdir(self.current_dir+dir_path)
 	'''
 	Create new directory
 	'''
@@ -121,7 +149,7 @@ class Storage(Thread):
 		pass
 
 
-def main(self):
+def main():
 	#initialize command socket and start listening
 	command_sock = socket.socket()
 	command_sock.bind(('', COMMAND_PORT))
@@ -129,10 +157,10 @@ def main(self):
 	
 	#wait for connection
 	while True:
-		con, addr = socket.accept()
+		con, addr = command_sock.accept()
 		print(str(addr) + 'connected')
 		Storage(con).start()
 
 
-if __name__ == "_main_":
+if __name__ == "__main__":
 	main()
