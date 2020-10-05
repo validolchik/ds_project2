@@ -19,7 +19,7 @@ class Storage(Thread):
 	def __init__(self, command_sock: socket.socket):
 		super().__init__(daemon=True)
 		self.command_sock = command_sock
-		self.current_dir = '/var/data'
+		self.current_dir = '/var/data'#to avoid using cd
 
 
 	#connection lost or closed
@@ -84,8 +84,10 @@ class Storage(Thread):
 	Open directory
 	'''
 	def opendir(self, dir_path):
+		#relative to current position
 		if dir_path[0] == '.':
 			stream = self.current_dir+dir_path
+		#global path
 		else:
 			self.current_dir = '/var/data'+dir_path
 		return stream.read()
