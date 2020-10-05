@@ -15,11 +15,11 @@ class Client():
 	Initialize the client storage on a new system
 	Remove any existing file in the dfs root dir and return available size 
 	'''
-	def init():
+	def __init__(self):
 		pass
 
 	''' Create new empty file '''
-	def create():
+	def create(self):
 		# i guess something like touch
 		pass
 
@@ -27,60 +27,60 @@ class Client():
 	Read file from DFS
 	Download it to client host
 	'''
-	def read():
+	def read(self):
 		pass
 
 	''' 
 	Upload file to DFS
 	'''
-	def write():
+	def write(self):
 		pass
 
 	''' 
 	Delete existing file from DFS
 	'''
-	def delete():
+	def delete(self):
 		pass
 
 	'''
 	Provide information about the file
 	'''
-	def info():
+	def info(self):
 		pass
 
 	'''
 	Create a copy of file
 	'''
-	def copy():
+	def copy(self):
 		pass
 
 	'''
 	Move given file to specified directory
 	'''
-	def move(file, newpath):
+	def move(self, file, newpath):
 		pass
 
 	'''
 	Open directory
 	'''
-	def opendir(dir_path):
+	def opendir(self, dir_path):
 		pass
 
 	'''
 	List the files in the directory
 	'''
-	def readdir(dir_path):
+	def readdir(self, dir_path):
 		pass
 
 	'''
 	Create new directory
 	'''
-	def mkdir():
+	def mkdir(self):
 		pass
 
 	'''
 	Delete directory
 	If any files exists, ask for confirmation
 	'''
-	def deldir():
+	def deldir(self):
 		pass
