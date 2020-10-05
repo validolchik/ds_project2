@@ -12,6 +12,10 @@ BUFFER_SIZE = 4096 # send 4096 bytes each time step
 
 class Client:
 	def __init__(self):
+		self.connect_to_name_server()
+		self.init()
+
+	def connect_to_name_server(self):
 		pass
 
 	"""
@@ -111,13 +115,13 @@ class Client:
 		# while True:
 		self.list_commands()
 		input_string = input("Write your command:")
-		while "dfs_exit" not in input_string:
+		while input_string != "dfs_exit":
 			input_string = input("Write your command:")
 		answer = input("Are you sure ('y', 'n')?:")
 		while answer != "n" and answer != "y":
 			answer = input("write 'y' or 'n':")
 		if answer == 'y':
-			pass
+			exit()
 		else:
 			self.user_interface()
 
