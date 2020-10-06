@@ -40,6 +40,7 @@ class Storage(Thread):
 	parse and execute the message
 	'''
 	def parse(self, message):
+		#dictionary with all possible functions
 		types ={'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
@@ -49,17 +50,21 @@ class Storage(Thread):
 				'down':self.download,
 				'up':self.upload
 				}
+
+		#split message and get request type
 		mes = message.split('][')
 		rtype = mes[0]
+		
 		res = 0
+		#execute function with needed amount of arguments
 		if len(mes) == 1:
 			res = types[mes[0]]()
 		elif len(mes) == 2:
 			res = types[mes[0]](mes[1])
 		elif len(mes) == 3:
 			res = types[mes[0]](mes[1], mes[2])
-		lenght = len(res)
-		return rtype, lenght, res
+		
+		return rtype, len(res), res
 
 	''' Create new empty file '''
 	def create(self, filename):

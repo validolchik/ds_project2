@@ -1,5 +1,6 @@
 import socket, os, sys
 from threading import Thread
+import time
 
 SEPARATOR = "][" # separator for filename and size transferring
 BUFFER_SIZE = 2048
@@ -16,12 +17,26 @@ class NameServer():
 	Initialize the client storage on a new system
 	Remove any existing file in the dfs root dir and return available size 
 	'''
-	def __init__(self):
-		self.storages = []
-		listener = Thread(target = self.listen)
-		listener.start()
-		self.discover()
+	#TODO
 
+
+	'''
+	start storage discovery thread
+	'''
+	def __init__(self):
+		explorer = Thread(target = self.explorer, daemon=True)
+		explorer.start()
+
+
+	'''
+	perform perodic(30sec) storage rediscovery
+	'''
+	def explorer(self):
+		listener = Thread(target = self.listen, daemon=True)
+		self.discover()
+		while True:
+			time.sleep(30)
+			self.discover()
 
 	'''
 	Listen for replies to a broadcast
@@ -33,15 +48,21 @@ class NameServer():
 		while True:
 			data, addr = sock.recvfrom(BUFFER_SIZE)
 			host, port = addr
-			#for evere response add ip to the table
-			if host not in self.storages:
-				self.storages.append(host)
-				print(self.storages)
-	
+			self.host_discovered(host)
+
 	'''
-	broadcast discovery message
+	add discovered host to the list of alive storages
+	'''
+	def host_discovered(self, host):
+		if host not in self.storages:
+			self.storages.append(host)
+		
+	'''
+	empty list of alive storages and 
+	broadcast a discovery message
 	'''
 	def discover(self):
+		self.storages = []
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
