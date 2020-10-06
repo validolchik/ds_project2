@@ -30,6 +30,8 @@ class NameServer():
 
 	'''
 	perform perodic(30sec) storage rediscovery
+
+	might result in having to redo the messages
 	'''
 	def explorer(self):
 		listener = Thread(target = self.listen, daemon=True)
@@ -79,6 +81,37 @@ class NameServer():
 
 	def run(self):
 		pass
+
+
+	'''
+	parse and execute the message
+	'''
+	def parse(self, message):
+		#dictionary with all possible functions
+		types ={'crf':self.create,
+				'cpf':self.copy,
+				'mvf':self.move,
+				'rmdir':self.deldir,
+				'mkdir':self.mkdir,
+				'opdir':self.opendir,
+				'down':self.download,
+				'up':self.upload
+				}
+
+		#split message and get request type
+		mes = message.split(SEPARATOR)
+		rtype = mes[0]
+		
+		res = 0
+		#execute function with needed amount of arguments
+		if len(mes) == 1:
+			res = types[mes[0]]()
+		elif len(mes) == 2:
+			res = types[mes[0]](mes[1])
+		elif len(mes) == 3:
+			res = types[mes[0]](mes[1], mes[2])
+		
+		return rtype, len(res), res
 
 	''' Create new empty file '''
 	def create(self):

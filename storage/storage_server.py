@@ -52,7 +52,7 @@ class Storage(Thread):
 				}
 
 		#split message and get request type
-		mes = message.split('][')
+		mes = message.split(SEPARATOR)
 		rtype = mes[0]
 		
 		res = 0
@@ -141,6 +141,7 @@ class Storage(Thread):
 	Delete directory
 	If any files exists, ask for confirmation
 	'''
+	#does not ask, you want - I delete
 	def deldir(self, dir_path):
 		stream = os.popen('rm -r '+ self.current_dir+dir_path)
 		return stream.read()
@@ -152,12 +153,14 @@ class Storage(Thread):
 		return 0
 
 
-
+#listen for roll cals and answer name server's broadcasts
 def heart():
+	#UDP socket
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 	sock.bind(('', DISCOVER_PORT))
-	#sock.listen()
+	#always listen
+	#when recieved send response to broadcast origin 
 	while True:
 		data, addr = sock.recvfrom(BUFFER_SIZE)
 		host, port = addr
@@ -180,6 +183,7 @@ def main():
 	
 	#wait for connection
 	while True:
+		#create Storage class instance in separate thread
 		con, addr = command_sock.accept()
 		print(str(addr) + 'connected')
 		Storage(con).start()
