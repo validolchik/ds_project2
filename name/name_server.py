@@ -8,6 +8,7 @@ CLIENT_PORT = 6235
 COMMAND_PORT = 3500
 DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
+HOST = '0.0.0.0'
 
 class NameServer():
 
@@ -134,6 +135,7 @@ def main():
 	client_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	client_sock.bind(('', CLIENT_PORT))
 	client_sock.listen()
+	print("listening in host {} on port {}".format("local", CLIENT_PORT))
 	
 	ns = NameServer()
 

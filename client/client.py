@@ -162,14 +162,18 @@ class Client:
 
 
 def main():
-	socket = socket.socket()
+	s = socket.socket()
 
-	host = "0.0.0.0"
-	port = 3425
+	# name server's host and port
+	# host = "188.130.155.153"
+	host = 'lcoalhost'
+	port = 6235
 
 	print(f"[+] Connecting to {host}:{port}")
-	socket.connect((host, port))
+	s.connect(('localhost', port))
 	print("[+] Connected.")
+
+
 	client = Client()
 	client.init()
 
