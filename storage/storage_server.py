@@ -98,7 +98,7 @@ class Storage(Thread):
 	Create a copy of file
 	'''
 	def copy(self, filename, newpath):
-		stream = os.popen('cp '+ self.current_dir+file + ' ' + self.current_dir+newpath)
+		stream = os.popen('cp '+ self.current_dir+filename + ' ' + self.current_dir+newpath)
 		return stream.read()
 
 	'''
