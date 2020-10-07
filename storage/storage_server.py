@@ -11,7 +11,7 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502
 
 
-HOME_DIR = '/var/data'#root directory for dfs files
+HOME_DIR = './data'#root directory for dfs files
 
 class Storage(Thread):
 
@@ -34,7 +34,9 @@ class Storage(Thread):
 	def run(self):
 		mess = self.command_sock.recv(BUFFER_SIZE).decode('utf-8')
 		rtype, length, res = self.parse_and_exec(mess)
+		print(rtype + ' recieved')
 		resp = f'{rtype}][{length}][{res}'
+		print(resp)
 		self.command_sock.send(resp.encode('utf-8'))
 		self.close()
 
@@ -154,7 +156,24 @@ class Storage(Thread):
 	'''
 	def fsTree(self):
 		stream = os.popen('ls -l -R ' + HOME_DIR + '/')
-		return stream.read()
+		out = stream.read().split('\n\n')
+		res = ''
+		for block in out:
+			lines = block.split('\n')
+			res += lines[0]+'\n'
+			if len(lines) > 3:
+				for l in lines[2:]:
+					is_directory = l[0]=='d'
+					line = [i for i in l.split(' ') if i != '']
+					print(line)
+					size = line[4]
+					name = ''.join(line[8:])
+					res += name
+					if not is_directory:
+						res += ' ' + size
+					res += '\n'
+			res += '\n'
+		return res
 
 
 #listen for roll cals and answer name server's broadcasts
@@ -168,6 +187,7 @@ def heart():
 	while True:
 		data, addr = sock.recvfrom(BUFFER_SIZE)
 		host, port = addr
+		print('Broadcast recieved from ' + host)
 		mess = b'Alive'
 		resp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		resp_sock.sendto(mess, (host, DISCOVER_RESPONSE_PORT))
@@ -175,6 +195,10 @@ def heart():
 
 
 def main():
+	if not os.path.exists('./data'):
+		os.system('mkdir data')
+
+
 	#initialize command socket and start listening
 	command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	command_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -182,7 +206,7 @@ def main():
 	command_sock.listen()
 
 	#start a thread that will answer roll calls
-	hart = Thread(target = heart)
+	hart = Thread(target = heart, daemon=True)
 	hart.start()
 	
 	#wait for connection

@@ -22,11 +22,11 @@ class NameServer():
 	'''
 	def read_catalog(self):
 		#if no catalogue file exist create one
-		if !os.path.isfile(CATALOG_FILE):
-			with open(CATALOG_FILE, 'w') as f
+		if not os.path.isfile(CATALOG_FILE):
+			with open(CATALOG_FILE, 'w') as f:
 				json.dump({}, f)
 		#then read the file
-		with open(CATALOG_FILE) as f
+		with open(CATALOG_FILE) as f:
 			self.catalog = json.load(f)
 
 	'''
@@ -41,11 +41,20 @@ class NameServer():
 			req = f'inf{SEPARATOR}' 
 			pad = BUFFER_SIZE - len(req)
 			req += pad*' '
-			command_sock.send(req)
-			resp = command_sock.recv(2048)
-			#NOT FINISHED
+			command_sock.send(req.encode('utf-8'))
+			resp = command_sock.recv(6).decode('utf-8')
+			while resp[-2] + resp[-1] != SEPARATOR:
+				resp += command_sock.recv(1).decode('utf-8')
+			print(resp)
+			lenght = int(resp.split(SEPARATOR)[1])
+			print(lenght)
+			resp = command_sock.recv(lenght).decode('utf-8')
+			
+			cat[s] = resp
 
-		with open(CATALOG_FILE, 'w') as f
+		print(cat)
+
+		with open(CATALOG_FILE, 'w') as f:
 			json.dump(cat, f)
 
 	'''
@@ -64,10 +73,16 @@ class NameServer():
 	'''
 	def explorer(self):
 		listener = Thread(target = self.listen, daemon=True)
+		listener.start()
 		self.discover()
+		time.sleep(5)
+		self.update_catalog()
 		while True:
 			time.sleep(30)
 			self.discover()
+			time.sleep(5)
+			print(self.storages)
+			self.update_catalog()
 
 	'''
 	Listen for replies to a broadcast
@@ -85,6 +100,7 @@ class NameServer():
 	add discovered host to the list of alive storages
 	'''
 	def host_discovered(self, host):
+		print('Answer from '+ host)
 		if host not in self.storages:
 			self.storages.append(host)
 		
@@ -141,7 +157,7 @@ class NameServer():
 	'''
 	def parse_and_exec(self, message):
 		#dictionary with all possible functions
-		types ={'init':self.init
+		types ={'init':self.init,
 				'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
@@ -149,7 +165,7 @@ class NameServer():
 				'mkdir':self.mkdir,
 				'opdir':self.opendir,
 				'down':self.download,
-				'up':self.upload
+				'up':self.upload,
 				'exit':self.exit
 				}
 
@@ -250,7 +266,7 @@ class NameServer():
 
 def main():
 	#initialize command socket and start listening
-	client_sock = socket.socket()
+	client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	client_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	client_sock.bind(('', CLIENT_PORT))
 	client_sock.listen()
