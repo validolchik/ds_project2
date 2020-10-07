@@ -1,1 +1,0 @@
-{"192.168.1.33": "/var/data/:\ndir1\nf1.txt 0\n\n/var/data/dir1:\n\n"}
