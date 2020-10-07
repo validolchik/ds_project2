@@ -14,13 +14,6 @@ HOST = '0.0.0.0'
 class NameServer():
 
 	'''
-	Initialize the client storage on a new system
-	Remove any existing file in the dfs root dir and return available size 
-	'''
-	#TODO
-
-
-	'''
 	start storage discovery thread
 	'''
 	def __init__(self):
@@ -71,24 +64,49 @@ class NameServer():
 		sock.sendto(b'discovery', ('<broadcast>', DISCOVER_PORT))
 
 
+	'''
+	assign client socket and start executing commands
+	'''
 	def connect(self, sock:socket.socket):
-		self.sock = sock
+		self.client_sock = sock
+		self.run()
 
 	#connection lost or closed
 	def close(self):
-		self.sock.close()
+		self.client_sock.close()
 		print('Client disconected')
+		return 0
 
+	'''
+	end communication and close connection
+	'''
+	def exit(self):
+		print('Client want to end connection')
+		self.close()
+		return 0
+
+	'''
+	read messages and exucute corresponding functions
+	'''
 	def run(self):
-		pass
+		mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
+		rtype, lenght, res = self.parse_and_exec(mess)
+		while rtype != self.exit:
+			resp = f'{rtype}][{length}][{res}'
+			self.command_sock.send(resp.encode('utf-8'))
+			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
+			rtype, lenght, res = mess.split(SEPARATOR)
+
+		
 
 
 	'''
 	parse and execute the message
 	'''
-	def parse(self, message):
+	def parse_and_exec(self, message):
 		#dictionary with all possible functions
-		types ={'crf':self.create,
+		types ={'init':self.init
+				'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
 				'rmdir':self.deldir,
@@ -96,6 +114,7 @@ class NameServer():
 				'opdir':self.opendir,
 				'down':self.download,
 				'up':self.upload
+				'exit':self.exit
 				}
 
 		#split message and get request type
@@ -112,6 +131,16 @@ class NameServer():
 			res = types[mes[0]](mes[1], mes[2])
 		
 		return rtype, len(res), res
+
+
+
+	'''
+	Initialize the client storage on a new system
+	Remove any existing file in the dfs root dir and return available size 
+	'''
+	def init(self):
+		return 'Initialized'
+
 
 	''' Create new empty file '''
 	def create(self):
