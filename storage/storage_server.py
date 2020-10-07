@@ -11,7 +11,7 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502
 
 
-HOME_DIR = './data'#root directory for dfs files
+HOME_DIR = '/var/data'#root directory for dfs files
 
 class Storage(Thread):
 
@@ -34,9 +34,7 @@ class Storage(Thread):
 	def run(self):
 		mess = self.command_sock.recv(BUFFER_SIZE).decode('utf-8')
 		rtype, length, res = self.parse_and_exec(mess)
-		print(rtype + ' recieved')
 		resp = f'{rtype}][{length}][{res}'
-		print(resp)
 		self.command_sock.send(resp.encode('utf-8'))
 		self.close()
 
@@ -60,7 +58,7 @@ class Storage(Thread):
 		mes = message.split(SEPARATOR)
 		rtype = mes[0]
 		
-		res = 0
+		res = ''
 		#execute function with needed amount of arguments
 		if len(mes) == 2:
 			res = types[mes[0]]()
@@ -75,7 +73,11 @@ class Storage(Thread):
 	clear all
 	'''
 	def init(self):
-		return 'Not yet'
+		stream = os.popen('rm -rf ' + HOME_DIR + '/')
+		res = 'failure'
+		if stream.read() == '':
+			res = 'Success'
+		return res
 
 
 	''' Create new empty file '''

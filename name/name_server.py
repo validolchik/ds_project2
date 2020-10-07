@@ -13,7 +13,7 @@ DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'
 
 CATALOG_FILE = 'catalog.txt'#catalog file
-CATALOG = {}#dictonary of storages and their file systems
+CATALOG = {'fs':[], 'ds':[]}#file system tree
 
 class NameServer():
 
@@ -30,38 +30,32 @@ class NameServer():
 			self.catalog = json.load(f)
 
 	'''
-	Read servers files and
-	Update the catalog file
+	Read servers file structures
 	'''
-	def update_catalog(self):
+	def get_storage_catalog(self):
 		cat = {}
-		command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		for s in self.storages:
-			command_sock.connect((s, COMMAND_PORT))
+			self.command_sock.connect((s, COMMAND_PORT))
 			req = f'inf{SEPARATOR}' 
 			pad = BUFFER_SIZE - len(req)
 			req += pad*' '
-			command_sock.send(req.encode('utf-8'))
-			resp = command_sock.recv(6).decode('utf-8')
+			self.command_sock.send(req.encode('utf-8'))
+			resp = self.command_sock.recv(6).decode('utf-8')
 			while resp[-2] + resp[-1] != SEPARATOR:
-				resp += command_sock.recv(1).decode('utf-8')
-			print(resp)
+				resp += self.command_sock.recv(1).decode('utf-8')
 			lenght = int(resp.split(SEPARATOR)[1])
-			print(lenght)
-			resp = command_sock.recv(lenght).decode('utf-8')
+			resp = self.command_sock.recv(lenght).decode('utf-8')
 			
 			cat[s] = resp
 
-		print(cat)
-
-		with open(CATALOG_FILE, 'w') as f:
-			json.dump(cat, f)
+		self.storage_catalogs = cat
 
 	'''
 	start a storage discovery thread
 	'''
 	def __init__(self):
-		self.curr_dir = '/'
+		self.curr_dir = CATALOG4
+		self.command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		explorer = Thread(target = self.explorer, daemon=True)
 		explorer.start()
 
@@ -76,13 +70,12 @@ class NameServer():
 		listener.start()
 		self.discover()
 		time.sleep(5)
-		self.update_catalog()
+		self.get_storage_catalog()
 		while True:
 			time.sleep(30)
 			self.discover()
 			time.sleep(5)
-			print(self.storages)
-			self.update_catalog()
+			self.get_storage_catalog()
 
 	'''
 	Listen for replies to a broadcast
@@ -149,6 +142,7 @@ class NameServer():
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 			rtype, lenght, res = mess.split(SEPARATOR)
 
+
 		
 
 
@@ -173,13 +167,13 @@ class NameServer():
 		mes = message.split(SEPARATOR)
 		rtype = mes[0]
 		
-		res = 0
+		res = ''
 		#execute function with needed amount of arguments
-		if len(mes) == 1:
+		if len(mes) == 2:
 			res = types[mes[0]]()
-		elif len(mes) == 2:
-			res = types[mes[0]](mes[1])
 		elif len(mes) == 3:
+			res = types[mes[0]](mes[1])
+		elif len(mes) == 4:
 			res = types[mes[0]](mes[1], mes[2])
 		
 		return rtype, len(res), res
@@ -191,12 +185,28 @@ class NameServer():
 	Remove any existing file in the dfs root dir and return available size 
 	'''
 	def init(self):
-		return 'Initialized'
+		CATALOG = []
+		
+		res = ''
+		for s in self.storages:
+			self.command_sock.connect((s, COMMAND_PORT))
+			req = f'init{SEPARATOR}' 
+			pad = BUFFER_SIZE - len(req)
+			req += pad*' '
+			self.command_sock.send(req.encode('utf-8'))
+			resp = self.command_sock.recv(6).decode('utf-8')
+			while resp[-2] + resp[-1] != SEPARATOR:
+				resp += self.command_sock.recv(1).decode('utf-8')
+			lenght = int(resp.split(SEPARATOR)[1])
+			resp = self.command_sock.recv(lenght).decode('utf-8')
+			res += 'storage ' + s + resp + '\n'
+		return res
 
 
 	''' Create new empty file '''
-	def create(self):
+	def create(self, filename):
 		# i guess something like touch
+		self.curr_dir['fs'].append(filename)
 		return 'Not yet'
 
 	''' 
