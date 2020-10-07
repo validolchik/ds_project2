@@ -93,7 +93,7 @@ class NameServer():
 		rtype, lenght, res = self.parse_and_exec(mess)
 		while rtype != self.exit:
 			resp = f'{rtype}][{length}][{res}'
-			self.command_sock.send(resp.encode('utf-8'))
+			self.client_sock.send(resp.encode('utf-8'))
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 			rtype, lenght, res = mess.split(SEPARATOR)
 
