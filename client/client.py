@@ -14,11 +14,20 @@ BUFFER_SIZE = 4096 # send 4096 bytes each time step
 
 class Client:
 	def __init__(self):
-		self.connect_to_name_server()
+		self.connect_to_name_server('localhost', 6235)
 		self.init()
 
-	def connect_to_name_server(self):
-		pass
+	def connect_to_name_server(self, name_server_ip, name_server_port):
+		s = socket.socket()
+
+		# name server's host and port
+		# host = "188.130.155.153"
+		# host = 'localhost'
+		# port = 6235
+
+		print(f"[+] Connecting to {name_server_ip}:{name_server_port}")
+		s.connect((name_server_ip, name_server_port))
+		print("[+] Connected.")
 
 	"""
 	Initialize the client storage on a new system
@@ -162,20 +171,11 @@ class Client:
 
 
 def main():
-	s = socket.socket()
 
-	# name server's host and port
-	# host = "188.130.155.153"
-	host = 'lcoalhost'
-	port = 6235
-
-	print(f"[+] Connecting to {host}:{port}")
-	s.connect(('localhost', port))
-	print("[+] Connected.")
 
 
 	client = Client()
-	client.init()
+	# client.init()
 
 
 if __name__ == "__main__":
