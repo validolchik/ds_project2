@@ -1,6 +1,7 @@
 import socket, os, sys
 from threading import Thread
 import time
+import json
 
 SEPARATOR = "][" # separator for filename and size transferring
 BUFFER_SIZE = 2048
@@ -11,12 +12,47 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'
 
+CATALOG_FILE = 'catalog.txt'#catalog file
+CATALOG = {}#dictonary of storages and their file systems
+
 class NameServer():
 
 	'''
-	start storage discovery thread
+	Read an existing catalog file or create a new one
+	'''
+	def read_catalog(self):
+		#if no catalogue file exist create one
+		if !os.path.isfile(CATALOG_FILE):
+			with open(CATALOG_FILE, 'w') as f
+				json.dump({}, f)
+		#then read the file
+		with open(CATALOG_FILE) as f
+			self.catalog = json.load(f)
+
+	'''
+	Read servers files and
+	Update the catalog file
+	'''
+	def update_catalog(self):
+		cat = {}
+		command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		for s in self.storages:
+			command_sock.connect((s, COMMAND_PORT))
+			req = f'inf{SEPARATOR}' 
+			pad = BUFFER_SIZE - len(req)
+			req += pad*' '
+			command_sock.send(req)
+			resp = command_sock.recv(2048)
+			#NOT FINISHED
+
+		with open(CATALOG_FILE, 'w') as f
+			json.dump(cat, f)
+
+	'''
+	start a storage discovery thread
 	'''
 	def __init__(self):
+		self.curr_dir = '/'
 		explorer = Thread(target = self.explorer, daemon=True)
 		explorer.start()
 
@@ -145,69 +181,69 @@ class NameServer():
 	''' Create new empty file '''
 	def create(self):
 		# i guess something like touch
-		pass
+		return 'Not yet'
 
 	''' 
 	Read file from DFS
 	Download it to client host
 	'''
 	def read(self):
-		pass
+		return 'Not yet'
 
 	''' 
 	Upload file to DFS
 	'''
 	def write(self):
-		pass
+		return 'Not yet'
 
 	''' 
 	Delete existing file from DFS
 	'''
 	def delete(self):
-		pass
+		return 'Not yet'
 
 	'''
 	Provide information about the file
 	'''
 	def info(self):
-		pass
+		return 'Not yet'
 
 	'''
 	Create a copy of file
 	'''
 	def copy(self):
-		pass
+		return 'Not yet'
 
 	'''
 	Move given file to specified directory
 	'''
 	def move(self, file, newpath):
-		pass
+		return 'Not yet'
 
 	'''
 	Open directory
 	'''
 	def opendir(self, dir_path):
-		pass
+		return 'Not yet'
 
 	'''
 	List the files in the directory
 	'''
 	def readdir(self, dir_path):
-		pass
+		return 'Not yet'
 
 	'''
 	Create new directory
 	'''
 	def mkdir(self):
-		pass
+		return 'Not yet'
 
 	'''
 	Delete directory
 	If any files exists, ask for confirmation
 	'''
 	def deldir(self):
-		pass
+		return 'Not yet'
 
 
 

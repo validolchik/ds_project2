@@ -10,6 +10,9 @@ COMMAND_PORT = 3500 #port for commands from name server
 DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502
 
+
+HOME_DIR = '/var/data'#root directory for dfs files
+
 class Storage(Thread):
 
 	'''
@@ -19,7 +22,6 @@ class Storage(Thread):
 	def __init__(self, command_sock: socket.socket):
 		super().__init__(daemon=True)
 		self.command_sock = command_sock
-		self.current_dir = '/var/data/'#to avoid using cd
 
 
 	#connection lost or closed
@@ -31,7 +33,7 @@ class Storage(Thread):
 	#main thread
 	def run(self):
 		mess = self.command_sock.recv(BUFFER_SIZE).decode('utf-8')
-		rtype, length, res = self.parse(mess)
+		rtype, length, res = self.parse_and_exec(mess)
 		resp = f'{rtype}][{length}][{res}'
 		self.command_sock.send(resp.encode('utf-8'))
 		self.close()
@@ -39,7 +41,7 @@ class Storage(Thread):
 	'''
 	parse and execute the message
 	'''
-	def parse(self, message):
+	def parse_and_exec(self, message):
 		#dictionary with all possible functions
 		types ={'crf':self.create,
 				'cpf':self.copy,
@@ -48,7 +50,8 @@ class Storage(Thread):
 				'mkdir':self.mkdir,
 				'opdir':self.opendir,
 				'down':self.download,
-				'up':self.upload
+				'up':self.upload,
+				'inf':self.fsTree
 				}
 
 		#split message and get request type
@@ -57,18 +60,25 @@ class Storage(Thread):
 		
 		res = 0
 		#execute function with needed amount of arguments
-		if len(mes) == 1:
+		if len(mes) == 2:
 			res = types[mes[0]]()
-		elif len(mes) == 2:
-			res = types[mes[0]](mes[1])
 		elif len(mes) == 3:
+			res = types[mes[0]](mes[1])
+		elif len(mes) == 4:
 			res = types[mes[0]](mes[1], mes[2])
 		
 		return rtype, len(res), res
 
+	'''
+	clear all
+	'''
+	def init(self):
+		return 'Not yet'
+
+
 	''' Create new empty file '''
 	def create(self, filename):
-		stream = os.popen('touch ' + self.current_dir+filename)
+		stream = os.popen('touch ' + HOME_DIR+filename)
 		return stream.read()
 
 	''' 
@@ -76,65 +86,58 @@ class Storage(Thread):
 	Download it to client host
 	'''
 	def download(self, filename):
-		return 0
+		return 'Not yet'
 
 	''' 
 	Upload file to DFS
 	'''
 	def upload(self, filename):
-		return 0
+		return 'Not yet'
 
 	''' 
 	Delete existing file from DFS
 	'''
 	def delete(self, filename):
-		stream = os.popen('rm ' + self.current_dir+filename)
+		stream = os.popen('rm ' + HOME_DIR+filename)
 		return stream.read()
 
 	'''
 	Provide information about the file
 	'''
 	def info(self, filename):
-		stream = os.popen('ls -l ' + self.current_dir+filename)
-		out = stream.read()
-		return out
+		stream = os.popen('ls -l ' + HOME_DIR+filename)
+		return stream.read()
 
 	'''
 	Create a copy of file
 	'''
 	def copy(self, filename, newpath):
-		stream = os.popen('cp '+ self.current_dir+filename + ' ' + self.current_dir+newpath)
+		stream = os.popen('cp '+ HOME_DIR+filename + ' ' + HOME_DIR+newpath)
 		return stream.read()
 
 	'''
 	Move given file to specified directory
 	'''
 	def move(self, file, newpath):
-		stream = os.popen('mv '+ self.current_dir+file + ' ' + self.current_dir+newpath)
+		stream = os.popen('mv '+ HOME_DIR+file + ' ' + HOME_DIR+newpath)
 		return stream.read()
 
 	'''
 	Open directory
 	'''
 	def opendir(self, dir_path):
-		#relative to current position
-		if dir_path[0] == '.':
-			stream = self.current_dir+dir_path
-		#global path
-		else:
-			self.current_dir = '/var/data'+dir_path
-		return stream.read()
+		return 'Not yet'
 
 	'''
 	List the files in the directory
 	'''
 	def readdir(self, dir_path):
-		return os.listdir(self.current_dir+dir_path)
+		return os.listdir(HOME_DIR+dir_path)
 	'''
 	Create new directory
 	'''
 	def mkdir(self, dir_path):
-		stream = os.popen('mkdir '+ self.current_dir+dir_path)
+		stream = os.popen('mkdir '+ HOME_DIR+dir_path)
 		return stream.read()
 
 	'''
@@ -143,14 +146,15 @@ class Storage(Thread):
 	'''
 	#does not ask, you want - I delete
 	def deldir(self, dir_path):
-		stream = os.popen('rm -r '+ self.current_dir+dir_path)
+		stream = os.popen('rm -r '+ HOME_DIR+dir_path)
 		return stream.read()
 
 	'''
 	List all directories and files in the system
 	'''
-	def fsTree(self,):
-		return 0
+	def fsTree(self):
+		stream = os.popen('ls -l -R ' + HOME_DIR + '/')
+		return stream.read()
 
 
 #listen for roll cals and answer name server's broadcasts
