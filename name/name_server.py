@@ -248,13 +248,13 @@ class NameServer():
 	'''
 	Provide information about the file
 	'''
-	def info(self):
+	def info(self, filename):
 		return 'Not yet'
 
 	'''
 	Create a copy of file
 	'''
-	def copy(self):
+	def copy(self, filename, newpath):
 		return 'Not yet'
 
 	'''
@@ -310,18 +310,23 @@ class NameServer():
 	If any files exists, ask for confirmation
 	'''
 	def deldir(self, dirname):
-		d = self.catalog_traverse(curr_dir + '/' + dirname)
-		if len(d) > 1:
-			return 'Removed'
-		else:
-			return 'Not yet'
+		res = ''
+		for i in range(len(self.curr_dir.children)):
+			el = self.curr_dir.children[i]
+			if el.is_dir and el.data == dirname and len(el.children) == 0:
+				del self.curr_dir.children[i]
+				res = 'Done'
+			elif el.is_dir and el.data == dirname and len(el.children) != 0:
+				res = 'Directory is not empty'
+			else:
+				res = 'No such directory'
 
 
 	'''
 	Return representation of the file system
 	'''
 	def tree(self):
-		return str(CATALOG)
+		return str(CATALOG_ROOT.childrens)
 
 
 
