@@ -12,8 +12,25 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'
 
+
+
+
+#Tree for file system catalog
+class Tree(object):
+	def __init__(self, data, is_dir, parent):
+		self.parent = parent
+		self.children = []
+		self.is_dir = is_dir
+		self.data = data
+
+	def add_child(self, node):
+		assert isinstance(node, Tree)
+		self.children.append(node)
+
+
 CATALOG_FILE = 'catalog.txt'#catalog file
-CATALOG = {'fs':[], 'ds':[]}#file system tree
+CATALOG_ROOT = Tree('/', True, None)#file system tree
+
 
 class NameServer():
 
@@ -54,7 +71,7 @@ class NameServer():
 	start a storage discovery thread
 	'''
 	def __init__(self):
-		self.curr_dir = CATALOG4
+		self.curr_dir = CATALOG_ROOT
 		self.command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		explorer = Thread(target = self.explorer, daemon=True)
 		explorer.start()
@@ -206,7 +223,7 @@ class NameServer():
 	''' Create new empty file '''
 	def create(self, filename):
 		# i guess something like touch
-		self.curr_dir['fs'].append(filename)
+		self.curr_dir.add_child(Tree(filename, False, curr_dir))
 		return 'Not yet'
 
 	''' 
@@ -250,26 +267,62 @@ class NameServer():
 	Open directory
 	'''
 	def opendir(self, dir_path):
-		return 'Not yet'
+		res = ''
+		if dir_path == '..':
+			if self.curr_dir != CATALOG_ROOT:
+				self.curr_dir = self.curr_dir.parent
+				res = 'Done'
+			else:
+				res = 'No such directory'
+		else:
+			for c in self.curr_dir.children:
+				if c.data == dir_path and c.is_dir:
+					self.curr_dir = c
+					res = 'Done'
+			if res != 'Done':
+				res = 'No such directory'
+		return res
 
 	'''
 	List the files in the directory
 	'''
 	def readdir(self, dir_path):
-		return 'Not yet'
+		res = [[d.data, d.is_dir] for d in self.curr_dir.children]
+		for i in range(len(res)):
+			if res[i][1]:
+				res[i] = res[i][0]+'/'
+			else:
+				res[i] = res[i][0]
+		return str(res)
+
+
+			
 
 	'''
 	Create new directory
 	'''
-	def mkdir(self):
-		return 'Not yet'
+	def mkdir(self, dirname):
+		self.curr_dir.add_child(Tree(dirname, True, self.curr_dir))
+		return 'done'
 
 	'''
 	Delete directory
 	If any files exists, ask for confirmation
 	'''
-	def deldir(self):
-		return 'Not yet'
+	def deldir(self, dirname):
+		d = self.catalog_traverse(curr_dir + '/' + dirname)
+		if len(d) > 1:
+			return 'Removed'
+		else:
+			return 'Not yet'
+
+
+	'''
+	Return representation of the file system
+	'''
+	def tree(self):
+		return str(CATALOG)
+
 
 
 

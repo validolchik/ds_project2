@@ -154,27 +154,11 @@ class Storage(Thread):
 		return stream.read()
 
 	'''
-	List all directories and files in the system
+	List all files in the system
 	'''
 	def fsTree(self):
-		stream = os.popen('ls -l -R ' + HOME_DIR + '/')
-		out = stream.read().split('\n\n')
-		res = ''
-		for block in out:
-			lines = block.split('\n')
-			res += lines[0]+'\n'
-			if len(lines) > 3:
-				for l in lines[2:]:
-					is_directory = l[0]=='d'
-					line = [i for i in l.split(' ') if i != '']
-					print(line)
-					size = line[4]
-					name = ''.join(line[8:])
-					res += name
-					if not is_directory:
-						res += ' ' + size
-					res += '\n'
-			res += '\n'
+		stream = os.popen('ls ' + HOME_DIR)
+		res = stream.read().split(' ')
 		return res
 
 
