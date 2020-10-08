@@ -1,4 +1,4 @@
-import socket, os, sys
+import socket, os
 from threading import Thread
 
 

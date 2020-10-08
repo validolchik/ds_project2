@@ -1,9 +1,11 @@
-import socket, os, sys
+import socket, os
 from threading import Thread
+import random
 import time
 import json
 
 SEPARATOR = "][" # separator for filename and size transferring
+FILENAME_SEPARATOR = '|'#separates directories to save on storage server
 BUFFER_SIZE = 2048
 
 CLIENT_PORT = 6235
@@ -33,6 +35,16 @@ CATALOG_ROOT = Tree('/', True, None)#file system tree
 
 
 class NameServer():
+
+	'''
+	traverse tree backwards to get full path to the file
+	'''
+	def get_path(self, node):
+		res = ''
+		while node.parent != None:
+			res = node.parent + FILENAME_SEPARATOR + res
+			node = node.parent
+		return res
 
 	'''
 	Read an existing catalog file or create a new one
@@ -110,7 +122,7 @@ class NameServer():
 	add discovered host to the list of alive storages
 	'''
 	def host_discovered(self, host):
-		print('Answer from '+ host)
+		print('Storage '+ host + ' alive')
 		if host not in self.storages:
 			self.storages.append(host)
 		
@@ -133,7 +145,7 @@ class NameServer():
 		self.client_sock = sock
 		self.run()
 
-	#connection lost or closed
+	#close connection with client
 	def close(self):
 		self.client_sock.close()
 		print('Client disconected')
@@ -157,7 +169,8 @@ class NameServer():
 			resp = f'{rtype}][{length}][{res}'
 			self.client_sock.send(resp.encode('utf-8'))
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
-			rtype, lenght, res = mess.split(SEPARATOR)
+			rtype, lenght, res = self.parse_and_exec(mess)
+			
 
 
 		
@@ -196,6 +209,18 @@ class NameServer():
 		return rtype, len(res), res
 
 
+	'''
+	Get response and extract body
+	'''
+	def get_response(self, sock, rtype):
+		resp = self.command_sock.recv(len(rtype)+len(SEPARATOR)).decode('utf-8')
+		while resp[-2] + resp[-1] != SEPARATOR:
+			resp += self.command_sock.recv(1).decode('utf-8')
+		lenght = int(resp.split(SEPARATOR)[1])
+		resp = self.command_sock.recv(lenght).decode('utf-8')
+		return resp
+
+
 
 	'''
 	Initialize the client storage on a new system
@@ -211,20 +236,41 @@ class NameServer():
 			pad = BUFFER_SIZE - len(req)
 			req += pad*' '
 			self.command_sock.send(req.encode('utf-8'))
-			resp = self.command_sock.recv(6).decode('utf-8')
-			while resp[-2] + resp[-1] != SEPARATOR:
-				resp += self.command_sock.recv(1).decode('utf-8')
-			lenght = int(resp.split(SEPARATOR)[1])
-			resp = self.command_sock.recv(lenght).decode('utf-8')
+			resp = self.get_response(self,command_sock, 'init')
 			res += 'storage ' + s + resp + '\n'
 		return res
 
 
 	''' Create new empty file '''
 	def create(self, filename):
-		# i guess something like touch
-		self.curr_dir.add_child(Tree(filename, False, curr_dir))
-		return 'Not yet'
+		res = ''
+
+		#check if file with that name already exists
+		already_exists = False
+		for c in self.curr_dir.children:
+			if c.data == filename:
+				already_exists = True
+
+		if not already_exists:
+			#add to the tree
+			new_file = Tree(filename, False, curr_dir)
+			self.curr_dir.add_child(new_file)
+			#tell random storage to create a file
+			path = self.get_path(new_file)
+			path += '][' + filename
+			storage = random.choise(self.storages)
+			req = 'crf'+SEPARATOR+path+SEPARATOR
+			padding = ' '*(BUFFER_SIZE-len(req))
+			req += padding
+			self.command_sock.connect((s, COMMAND_PORT))
+			self.command_sock.send(req)
+			resp = self.get_response(self.command_sock, 'crf')
+			res = resp
+		else:
+			res = 'File already exists'
+
+		return res
+
 
 	''' 
 	Read file from DFS
@@ -242,8 +288,22 @@ class NameServer():
 	''' 
 	Delete existing file from DFS
 	'''
-	def delete(self):
-		return 'Not yet'
+	def delete(self, filename):
+		res = ''
+		el = None
+
+		#find a file with given name
+		for i in range(len(self.curr_dir.children)):
+			if self.curr_dir.children[i].data == filename and not self.curr_dir.children[i].is_dir:
+				el = i
+
+
+		if el == None:
+			res = 'No such file'
+		else:
+			del self.curr_dir.children[el]
+			res = 'Done'
+		return res
 
 	'''
 	Provide information about the file
@@ -311,15 +371,22 @@ class NameServer():
 	'''
 	def deldir(self, dirname):
 		res = ''
+		el = None
+
+		#find a directory with given name
 		for i in range(len(self.curr_dir.children)):
-			el = self.curr_dir.children[i]
-			if el.is_dir and el.data == dirname and len(el.children) == 0:
-				del self.curr_dir.children[i]
-				res = 'Done'
-			elif el.is_dir and el.data == dirname and len(el.children) != 0:
-				res = 'Directory is not empty'
-			else:
-				res = 'No such directory'
+			if self.curr_dir.children[i].data == filename and self.curr_dir.children[i].is_dir:
+				el = i
+
+
+		if el == None:
+			res = 'No such directory'
+		elif len(self.curr_dir.children[el].children) != 0:
+			res = 'Directory is not empty'
+		else:
+			del self.curr_dir.children[el]
+			res = 'Done'
+		return res
 
 
 	'''
