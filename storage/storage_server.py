@@ -74,16 +74,22 @@ class Storage(Thread):
 	'''
 	def init(self):
 		stream = os.popen('rm -rf ' + HOME_DIR + '/')
-		res = 'failure'
-		if stream.read() == '':
-			res = 'Success'
-		return res
+		return stream.read()
 
 
 	''' Create new empty file '''
 	def create(self, filename):
 		stream = os.popen('touch ' + HOME_DIR+filename)
-		return stream.read()
+		res = stream.read()
+		if res == '':
+			res == 'Success '
+
+		stream = os.popen('df -a -h '+ HOME_DIR + '/')
+		t = stream.read().split('\n')[1].split(' ')
+		t = [i for i in t if i != '']
+		avaliable_space = t[3]
+		res += avaliable_space
+		return res
 
 	''' 
 	Read file from DFS

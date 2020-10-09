@@ -14,20 +14,23 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'
 
-
+FILE_PORT_MIN = 4000
+FILE_PORT_MAX = 4100
 
 
 #Tree for file system catalog
 class Tree(object):
-	def __init__(self, data, is_dir, parent):
+	def __init__(self, data, is_dir, parent, info=''):
 		self.parent = parent
 		self.children = []
 		self.is_dir = is_dir
 		self.data = data
+		self.info = ''
 
 	def add_child(self, node):
 		assert isinstance(node, Tree)
 		self.children.append(node)
+
 
 
 CATALOG_FILE = 'catalog.txt'#catalog file
@@ -170,10 +173,7 @@ class NameServer():
 			self.client_sock.send(resp.encode('utf-8'))
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 			rtype, lenght, res = self.parse_and_exec(mess)
-			
 
-
-		
 
 
 	'''
@@ -221,13 +221,13 @@ class NameServer():
 		return resp
 
 
-
 	'''
 	Initialize the client storage on a new system
 	Remove any existing file in the dfs root dir and return available size 
 	'''
 	def init(self):
-		CATALOG = []
+		CATALOG_ROOT = Tree('/', True, None)
+		self.curr_dir = CATALOG_ROOT
 		
 		res = ''
 		for s in self.storages:
@@ -253,7 +253,7 @@ class NameServer():
 
 		if not already_exists:
 			#add to the tree
-			new_file = Tree(filename, False, curr_dir)
+			new_file = Tree(filename, False, curr_dir, 'size=0')
 			self.curr_dir.add_child(new_file)
 			#tell random storage to create a file
 			path = self.get_path(new_file)
@@ -264,8 +264,15 @@ class NameServer():
 			req += padding
 			self.command_sock.connect((s, COMMAND_PORT))
 			self.command_sock.send(req)
+
+			#wait for confirmation
 			resp = self.get_response(self.command_sock, 'crf')
 			res = resp
+			if res == '':
+				res = 'File craeted'
+				new_file.info += '\nreplicas=1'
+			else:
+				del self.curr_dir.children[-1]
 		else:
 			res = 'File already exists'
 
@@ -277,12 +284,20 @@ class NameServer():
 	Download it to client host
 	'''
 	def read(self):
+		#give client a port
+		#wait for confirmation
+		#tell storage filesize and name
+		#tell storage to connect to client
 		return 'Not yet'
 
 	''' 
 	Upload file to DFS
 	'''
 	def write(self):
+		#give client a port
+		#wait for confirmation
+		#tell storage filesize and name
+		#tell storage to connect to client
 		return 'Not yet'
 
 	''' 
@@ -309,19 +324,146 @@ class NameServer():
 	Provide information about the file
 	'''
 	def info(self, filename):
-		return 'Not yet'
+		res = ''
+
+		#check if file with that name already exists
+		file = None
+		for c in self.curr_dir.children:
+			if c.data == filename:
+				file = c
+
+		if file == None:
+			res = 'No such file exist'
+		else:
+			res = file.info
+
+		return res
 
 	'''
 	Create a copy of file
 	'''
 	def copy(self, filename, newpath):
-		return 'Not yet'
+		res = ''
+
+		#check if file with that name exists
+		file = None
+		index = 0
+		for i in range(len(self.curr_dir.children)):
+			c = self.curr_dir.children[i]
+			if c.data == filename:
+				file = c
+				index = 0
+
+		if file == None:
+			res = 'No such file exist'
+		else:
+			#move the file
+			new_file = file.deep_copy()
+			#del self.curr_dir.children[index]
+
+			newname = filename
+			if newpath[-1] != '/':
+				newname = newpath.split('/')[-1]
+				newpath = ''.join(newpath.split('/')[:-1])
+			path = newpath.split('/')
+			d = self.curr_dir
+			#traverse to requested directory
+			try:			
+				for p in path:
+					if p == '..':
+						d = d.parent
+					elif p != '':
+						for dr in d.children:
+							if dr.data == p and dr.is_dir:
+								d = dr
+
+				#check if file with such name already exists
+				collision = None
+				for c in self.curr_dir.children:
+					if c.data == newname:
+						collision = c
+				copy = 1
+
+				#if collision detected add a number at the end
+				while collision != None:
+					newname = f'{newname.split('.')[0]}({copy}).{newname.split('.')[1]}'
+					collision = None
+					for c in self.curr_dir.children:
+					if c.data == newname:
+						collision = c
+
+				#add file to traversed directory
+				new_file.data = newname
+				new_file.parent = d
+				d.add_child(new_file)
+				res = 'Done'
+			except:
+				res = 'Error'
+
+		return res
 
 	'''
 	Move given file to specified directory
 	'''
 	def move(self, file, newpath):
-		return 'Not yet'
+		res = ''
+
+		#check if file with that name exists
+		file = None
+		index = 0
+		for i in range(len(self.curr_dir.children)):
+			c = self.curr_dir.children[i]
+			if c.data == filename:
+				file = c
+				index = 0
+
+		if file == None:
+			res = 'No such file exist'
+		else:
+			#move the file
+			new_file = file.deep_copy()
+			del self.curr_dir.children[index]
+
+			newname = filename
+			if newpath[-1] != '/':
+				newname = newpath.split('/')[-1]
+				newpath = ''.join(newpath.split('/')[:-1])
+			path = newpath.split('/')
+			d = self.curr_dir
+			#traverse to requested directory
+			try:			
+				for p in path:
+					if p == '..':
+						d = d.parent
+					elif p != '':
+						for dr in d.children:
+							if dr.data == p and dr.is_dir:
+								d = dr
+
+				#check if file with such name already exists
+				collision = None
+				for c in self.curr_dir.children:
+					if c.data == newname:
+						collision = c
+				copy = 1
+
+				#if collision detected add a number at the end
+				while collision != None:
+					newname = f'{newname.split('.')[0]}({copy}).{newname.split('.')[1]}'
+					collision = None
+					for c in self.curr_dir.children:
+					if c.data == newname:
+						collision = c
+
+				#add file to traversed directory
+				new_file.data = newname
+				new_file.parent = d
+				d.add_child(new_file)
+				res = 'Done'
+			except:
+				res = 'Error'
+
+		return res
 
 	'''
 	Open directory
@@ -350,13 +492,11 @@ class NameServer():
 		res = [[d.data, d.is_dir] for d in self.curr_dir.children]
 		for i in range(len(res)):
 			if res[i][1]:
-				res[i] = res[i][0]+'/'
+				res[i] = res[i][0]+'/\n'
 			else:
-				res[i] = res[i][0]
-		return str(res)
-
-
-			
+				res[i] = res[i][0]+'\n'
+		return ''.join(res)
+		
 
 	'''
 	Create new directory
@@ -393,7 +533,7 @@ class NameServer():
 	Return representation of the file system
 	'''
 	def tree(self):
-		return str(CATALOG_ROOT.childrens)
+		return 'not yet'
 
 
 
