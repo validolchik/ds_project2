@@ -386,11 +386,11 @@ class NameServer():
 
 				#if collision detected add a number at the end
 				while collision != None:
-					newname = f'{newname.split('.')[0]}({copy}).{newname.split('.')[1]}'
+					newname = f"{newname.split('.')[0]}({copy}).{newname.split('.')[1]}"
 					collision = None
 					for c in self.curr_dir.children:
-					if c.data == newname:
-						collision = c
+						if c.data == newname:
+							collision = c
 
 				#add file to traversed directory
 				new_file.data = newname
@@ -449,11 +449,11 @@ class NameServer():
 
 				#if collision detected add a number at the end
 				while collision != None:
-					newname = f'{newname.split('.')[0]}({copy}).{newname.split('.')[1]}'
+					newname = f"{newname.split('.')[0]}({copy}).{newname.split('.')[1]}"
 					collision = None
 					for c in self.curr_dir.children:
-					if c.data == newname:
-						collision = c
+						if c.data == newname:
+							collision = c
 
 				#add file to traversed directory
 				new_file.data = newname
