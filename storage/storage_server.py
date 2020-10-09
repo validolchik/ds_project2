@@ -11,9 +11,27 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502
 
 
-HOME_DIR = '/var/data'#root directory for dfs files
+HOME_DIR = './data'#root directory for dfs files
 
 class Storage(Thread):
+
+	'''
+	build and pad a request with given fields
+	'''
+	def make_req(self, *args):
+		fields = list(args)
+		res = ''
+		for f in fields:
+			res += f + SEPARATOR
+		res += ' '*(BUFFER_SIZE-len(res))
+		return res.encode('utf-8')
+
+	'''
+	build a response
+	'''
+	def make_resp(self, rtype, lenght, data):
+		res = rtype + SEPARATOR + lenght + SEPARATOR + data
+		return res.encode('utf-8')
 
 	'''
 	Initialize the client storage on a new system
@@ -33,9 +51,8 @@ class Storage(Thread):
 	#main thread
 	def run(self):
 		mess = self.command_sock.recv(BUFFER_SIZE).decode('utf-8')
-		rtype, length, res = self.parse_and_exec(mess)
-		resp = f'{rtype}][{length}][{res}'
-		self.command_sock.send(resp.encode('utf-8'))
+		resp = self.make_resp(self.parse_and_exec(mess))
+		self.command_sock.send(resp)
 		self.close()
 
 	'''
@@ -66,6 +83,8 @@ class Storage(Thread):
 			res = types[mes[0]](mes[1])
 		elif len(mes) == 4:
 			res = types[mes[0]](mes[1], mes[2])
+		elif len(mes) == 5:
+			res = types[mes[0]](mes[1], mes[2], mes[3])
 		
 		return rtype, len(res), res
 
@@ -92,17 +111,59 @@ class Storage(Thread):
 		return res
 
 	''' 
-	Read file from DFS
-	Download it to client host
+	Download file from Client
 	'''
-	def download(self, filename):
-		return 'Not yet'
+	def download(self, filename, filesize, client):
+		file_size = int(filesize)
+
+		#caculate number of 2KB chunks in the file
+		#and size of remaining data
+		n_blocks = file_size//BUFFER_SIZE
+		extra_block = file_size - n_blocks*BUFFER_SIZE
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+		sock.connect(client)
+
+		f = open(filename, 'wb')
+
+		for i in range(n_blocks):
+			block = sock.recv(BUFFER_SIZE)
+			f.write(block)
+
+		block = sock.recv(extra_block)
+		f.write(block)
+		sock.close()
+
+		return str(file_size) + ' bytes recieved'
 
 	''' 
-	Upload file to DFS
+	Upload file to Clent
 	'''
-	def upload(self, filename):
-		return 'Not yet'
+	def upload(self, filename, filesize, client):
+		file_size = int(filesize)
+
+		#caculate number of 2KB chunks in the file
+		#and size of remaining data
+		n_blocks = file_size//BUFFER_SIZE
+		extra_block = file_size - n_blocks*BUFFER_SIZE
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+		sock.connect(client)
+
+		f = open(filename, 'rb')
+
+		for i in range(n_blocks):
+			block = f.read(block)
+			sock.send(block)
+
+		block = f.read(extra_block)
+		sock.send(extra_block)
+		sock.close()
+		
+
+		return str(file_size) + ' bytes sent'
 
 	''' 
 	Delete existing file from DFS
@@ -187,8 +248,8 @@ def heart():
 
 
 def main():
-	if not os.path.exists('./data'):
-		os.system('mkdir data')
+	if not os.path.exists(HOME_DIR):
+		os.system('mkdir '+ HOME_DIR)
 
 
 	#initialize command socket and start listening

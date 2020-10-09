@@ -12,10 +12,9 @@ CLIENT_PORT = 6235
 COMMAND_PORT = 3500
 DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
-HOST = '0.0.0.0'
+HOST = '0.0.0.0'#?
 
-FILE_PORT_MIN = 4000
-FILE_PORT_MAX = 4100
+FILE_PORTS = {i:True for i in range(4000,4100)}
 
 
 #Tree for file system catalog
@@ -38,6 +37,24 @@ CATALOG_ROOT = Tree('/', True, None)#file system tree
 
 
 class NameServer():
+
+	'''
+	build and pad a request with given fields
+	'''
+	def make_req(self, *args):
+		fields = list(args)
+		res = ''
+		for f in fields:
+			res += f + SEPARATOR
+		res += ' '*(BUFFER_SIZE-len(res))
+		return res.encode('utf-8')
+
+	'''
+	build a response
+	'''
+	def make_resp(self, rtype, lenght, data):
+		res = rtype + SEPARATOR + lenght + SEPARATOR + data
+		return res.encode('utf-8')
 
 	'''
 	traverse tree backwards to get full path to the file
@@ -65,22 +82,7 @@ class NameServer():
 	Read servers file structures
 	'''
 	def get_storage_catalog(self):
-		cat = {}
-		for s in self.storages:
-			self.command_sock.connect((s, COMMAND_PORT))
-			req = f'inf{SEPARATOR}' 
-			pad = BUFFER_SIZE - len(req)
-			req += pad*' '
-			self.command_sock.send(req.encode('utf-8'))
-			resp = self.command_sock.recv(6).decode('utf-8')
-			while resp[-2] + resp[-1] != SEPARATOR:
-				resp += self.command_sock.recv(1).decode('utf-8')
-			lenght = int(resp.split(SEPARATOR)[1])
-			resp = self.command_sock.recv(lenght).decode('utf-8')
-			
-			cat[s] = resp
-
-		self.storage_catalogs = cat
+		return 'Not yet'
 
 	'''
 	start a storage discovery thread
@@ -91,11 +93,8 @@ class NameServer():
 		explorer = Thread(target = self.explorer, daemon=True)
 		explorer.start()
 
-
 	'''
 	perform perodic(30sec) storage rediscovery
-
-	might result in having to redo the messages
 	'''
 	def explorer(self):
 		listener = Thread(target = self.listen, daemon=True)
@@ -140,12 +139,12 @@ class NameServer():
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 		sock.sendto(b'discovery', ('<broadcast>', DISCOVER_PORT))
 
-
 	'''
 	assign client socket and start executing commands
 	'''
-	def connect(self, sock:socket.socket):
+	def connect(self, sock:socket.socket, host):
 		self.client_sock = sock
+		self.client_host = host
 		self.run()
 
 	#close connection with client
@@ -163,18 +162,17 @@ class NameServer():
 		return 0
 
 	'''
-	read messages and exucute corresponding functions
+	main thread
+	read messages and give them to parser
 	'''
 	def run(self):
 		mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 		rtype, lenght, res = self.parse_and_exec(mess)
 		while rtype != self.exit:
-			resp = f'{rtype}][{length}][{res}'
-			self.client_sock.send(resp.encode('utf-8'))
+			resp = self.make_resp(rtype, lenght, res)
+			self.client_sock.send(resp)
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 			rtype, lenght, res = self.parse_and_exec(mess)
-
-
 
 	'''
 	parse and execute the message
@@ -208,7 +206,6 @@ class NameServer():
 		
 		return rtype, len(res), res
 
-
 	'''
 	Get response and extract body
 	'''
@@ -219,7 +216,6 @@ class NameServer():
 		lenght = int(resp.split(SEPARATOR)[1])
 		resp = self.command_sock.recv(lenght).decode('utf-8')
 		return resp
-
 
 	'''
 	Initialize the client storage on a new system
@@ -232,14 +228,11 @@ class NameServer():
 		res = ''
 		for s in self.storages:
 			self.command_sock.connect((s, COMMAND_PORT))
-			req = f'init{SEPARATOR}' 
-			pad = BUFFER_SIZE - len(req)
-			req += pad*' '
-			self.command_sock.send(req.encode('utf-8'))
+			req = self.make_req('init')
+			self.command_sock.send(req)
 			resp = self.get_response(self,command_sock, 'init')
 			res += 'storage ' + s + resp + '\n'
 		return res
-
 
 	''' Create new empty file '''
 	def create(self, filename):
@@ -257,11 +250,9 @@ class NameServer():
 			self.curr_dir.add_child(new_file)
 			#tell random storage to create a file
 			path = self.get_path(new_file)
-			path += '][' + filename
+			path += FILENAME_SEPARATOR + filename
 			storage = random.choise(self.storages)
-			req = 'crf'+SEPARATOR+path+SEPARATOR
-			padding = ' '*(BUFFER_SIZE-len(req))
-			req += padding
+			req = self.make_req('crf', path)
 			self.command_sock.connect((s, COMMAND_PORT))
 			self.command_sock.send(req)
 
@@ -278,27 +269,52 @@ class NameServer():
 
 		return res
 
-
 	''' 
 	Read file from DFS
 	Download it to client host
 	'''
-	def read(self):
+	def read(self, filename, filesize):
 		#give client a port
+		port = random.choise(FILE_PORTS)
+		while not FILE_PORTS[port]:
+			port = random.choise(FILE_PORTS)
+		self.client_sock.send(str(port).encode('utf-8'))
 		#wait for confirmation
-		#tell storage filesize and name
-		#tell storage to connect to client
-		return 'Not yet'
+		conf = self.client_sock.recv(1).decode()
+
+		#tell random storage to upload a file to the client
+		storage = random.choise(self.storages)
+		req = self.make_req('up', path, filesize, (self.client_host, port))
+		self.command_sock.connect((s, COMMAND_PORT))
+		self.command_sock.send(req)
+
+		#wait for confirmation
+		resp = self.get_response(self.command_sock, 'up')
+
+		return resp
 
 	''' 
 	Upload file to DFS
 	'''
 	def write(self):
 		#give client a port
+		port = random.choise(FILE_PORTS)
+		while not FILE_PORTS[port]:
+			port = random.choise(FILE_PORTS)
+		self.client_sock.send(str(port).encode('utf-8'))
 		#wait for confirmation
-		#tell storage filesize and name
-		#tell storage to connect to client
-		return 'Not yet'
+		conf = self.client_sock.recv(1).decode()
+
+		#tell random storage to download a file from the client
+		storage = random.choise(self.storages)
+		req = self.make_req('down', path, filesize, (self.client_host, port))
+		self.command_sock.connect((s, COMMAND_PORT))
+		self.command_sock.send(req)
+
+		#wait for confirmation
+		resp = self.get_response(self.command_sock, 'down')
+
+		return resp
 
 	''' 
 	Delete existing file from DFS
@@ -497,7 +513,6 @@ class NameServer():
 				res[i] = res[i][0]+'\n'
 		return ''.join(res)
 		
-
 	'''
 	Create new directory
 	'''
@@ -552,8 +567,9 @@ def main():
 	#wait for connection
 	while True:
 		con, addr = client_sock.accept()
+		host, port = addr
 		print(str(addr) + 'connected')
-		ns.connect(con)
+		ns.connect(con, host)
 
 
 if __name__ == "__main__":
