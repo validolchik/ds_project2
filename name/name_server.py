@@ -271,9 +271,18 @@ class NameServer():
 
 	''' 
 	Read file from DFS
-	Download it to client host
+	Upload it to client host
 	'''
 	def read(self, filename, filesize):
+		#check if file with such name  exists
+		file = None
+		for f in self.curr_dir.children:
+			if f.data == filename:
+				file = f
+		if file == None:
+			return 'file does not exists'
+		#otherwise continue
+
 		#give client a port
 		port = random.choise(FILE_PORTS)
 		while not FILE_PORTS[port]:
@@ -296,7 +305,17 @@ class NameServer():
 	''' 
 	Upload file to DFS
 	'''
-	def write(self):
+	def write(self, filename, filesize):
+
+		#check if file with such name already exists
+		file = None
+		for f in self.curr_dir.children:
+			if f.data == filename:
+				file = f
+		if file != None:
+			return 'file already exists'
+		#otherwise continue
+
 		#give client a port
 		port = random.choise(FILE_PORTS)
 		while not FILE_PORTS[port]:

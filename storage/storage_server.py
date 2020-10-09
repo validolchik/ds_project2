@@ -225,7 +225,7 @@ class Storage(Thread):
 	'''
 	def fsTree(self):
 		stream = os.popen('ls ' + HOME_DIR)
-		res = stream.read().split(' ')
+		res = stream.read()
 		return res
 
 
