@@ -77,6 +77,14 @@ class NameServer():
 		with open(CATALOG_FILE) as f:
 			self.CATALOG_ROOT = self.str_to_tree(f.read())
 
+
+	'''
+	Save current state of FS tree to a file
+	'''
+	def save_catalog(self):
+		with open(CATALOG_FILE, 'w') as f:
+			f.write(self.tree_to_str())
+
 	'''
 	Read servers file structures
 	'''
@@ -105,7 +113,8 @@ class NameServer():
 			time.sleep(30)
 			self.discover()
 			time.sleep(5)
-			self.get_storage_catalog()
+			self.get_storage_catalogs()
+			self.sync()
 
 	'''
 	Listen for replies to a broadcast
@@ -137,6 +146,12 @@ class NameServer():
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 		sock.sendto(b'discovery', ('<broadcast>', DISCOVER_PORT))
+
+
+	'''
+	'''
+	def sync(self):
+		return 'Not yet'
 
 	'''
 	assign client socket and start executing commands
@@ -170,6 +185,7 @@ class NameServer():
 		while rtype != self.exit:
 			resp = self.make_resp(rtype, lenght, res)
 			self.client_sock.send(resp)
+			self.save_catalog()
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 			rtype, lenght, res = self.parse_and_exec(mess)
 
@@ -586,6 +602,8 @@ class NameServer():
 			res += self.get_path(l)
 			if l.is_dir:
 				res += '/'
+			else:
+				res += SEPARATOR + l.info
 			res += '\n'
 		return res
 
@@ -595,7 +613,26 @@ class NameServer():
 	Parse string representation into a tree
 	'''
 	def str_to_tree(self, s):
-		return 'Not yet'
+		root = Tree('/', True, None)
+		lines = s.split('\n')
+		lines = [l.split(FILENAME_SEPARATOR) for l in lines]
+		for l in lines:
+			curr_dir = root
+			for node in l:
+				new_child = None
+				if node == l[-1]:
+					is_dir = node[-1]=='/'
+					if is_dir:
+						new_child = Tree(node[:-1], True, curr_dir))
+					else:
+						info = node.split(SEPARATOR)[-1]
+						new_child = (Tree(node, False, curr_dir, info))
+				else:
+					new_child = (Tree(node, True, curr_dir))
+				curr_dir.add_child(new_child)
+				curr_dir = new_child
+
+		return root
 
 
 
@@ -613,6 +650,8 @@ def main():
 	print("listening in host {} on port {}".format("local", CLIENT_PORT))
 	
 	ns = NameServer()
+	print(ns.tree_to_str())
+
 
 	#wait for connection
 	while True:
