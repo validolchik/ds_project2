@@ -162,7 +162,7 @@ class NameServer():
 		files = [f for f in self.tree_to_str().split('\n') if  f.data[-1] != '/']
 		lack = {}
 		for s in self.storages_catalogs:
-			for f in self.storage_catalogs[s];
+			for f in self.storage_catalogs[s]:
 				pass
 		return 'Not yet'
 
