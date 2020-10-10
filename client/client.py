@@ -277,7 +277,7 @@ class Client:
 				req = self.make_req(types[mes[0]], mes[1], mes[2])
 				# res = getattr(self, types[mes[0]])(mes[1], mes[2])
 			self.command_socket.send(req)
-			resp = self.get_response(self.command_socket, mes[0])
+			resp = self.get_response(self.command_socket, types[mes[0]])
 			print(resp)
 
 
