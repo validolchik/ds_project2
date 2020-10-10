@@ -215,8 +215,8 @@ class NameServer():
 				'rmdir':self.deldir,
 				'mkdir':self.mkdir,
 				'opdir':self.opendir,
-				'down':self.download,
-				'up':self.upload,
+				'rdf':self.read,
+				'wrf':self.write,
 				'exit':self.exit
 				}
 
