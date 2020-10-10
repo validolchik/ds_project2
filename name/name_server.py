@@ -572,7 +572,7 @@ class NameServer():
 			if len(c.children) == 0:
 				leaves.append(c)
 			else:
-				leaves.append(self.dfs(c))
+				leaves += self.dfs(c)
 		return leaves
 
 
