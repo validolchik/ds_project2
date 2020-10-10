@@ -360,7 +360,7 @@ class NameServer():
 
 		#tell random storage to download a file from the client
 		storage = random.choise(self.storages)
-		file = Tree(filename, False, curr_dir, 'size='+filesize + ' replicas=1')
+		file = Tree(filename, False, self.curr_dir, 'size='+filesize + ' replicas=1')
 		self.curr_dir.add_child(file)
 		path = self.get_path(file)
 		req = self.make_req('down', path, filesize, (self.client_host, port))
