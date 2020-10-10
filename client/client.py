@@ -2,7 +2,7 @@ import socket
 
 
 SEPARATOR = "][" # separator for filename and size transferring
-BUFFER_SIZE = 4096 # send 4096 bytes each time step
+BUFFER_SIZE = 2048 # send 4096 bytes each time step
 
 
 
@@ -14,10 +14,15 @@ BUFFER_SIZE = 4096 # send 4096 bytes each time step
 
 class Client:
 	def __init__(self):
-		self.connect_to_name_server('localhost', 6235)
-		self.init()
-
-	def connect_to_name_server(self, name_server_ip, name_server_port):
+		# self.connect_to_name_server('localhost', 6235)
+		self.command_socket = self.connect_to_server('', 6235)
+		self.user_interface()
+	
+	'''
+	connect to server by his ip and port number
+	'''
+	
+	def connect_to_server(self, server_ip, server_port):
 		s = socket.socket()
 
 		# name server's host and port
@@ -25,9 +30,10 @@ class Client:
 		# host = 'localhost'
 		# port = 6235
 
-		print(f"[+] Connecting to {name_server_ip}:{name_server_port}")
-		s.connect((name_server_ip, name_server_port))
+		print(f"[+] Connecting to {server_ip}:{server_port}")
+		s.connect((server_ip, server_port))
 		print("[+] Connected.")
+		return s
 
 	"""
 	Initialize the client storage on a new system
@@ -35,14 +41,45 @@ class Client:
 	"""
 	def init(self):
 		print("init")
-		self.user_interface()
-		pass
+		req = self.make_req('init')
+		self.command_socket.send(req)
+		resp = self.get_response(self.command_socket, 'init')
+		print("init " + str(resp))
+
+	def remove_all_existing_files(self):
+		return None
+
+	'''
+	build and pad a request with given fields
+	'''
+	def make_req(self, *args):
+		fields = list(args)
+		res = ''
+		for f in fields:
+			res += f + SEPARATOR
+		res += ' ' * (BUFFER_SIZE - len(res))
+		return res.encode('utf-8')
+
+	'''
+	Get response and extract body
+	'''
+	def get_response(self, sock, rtype):
+		resp = self.command_socket.recv(len(rtype)+len(SEPARATOR)).decode('utf-8')
+		while resp[-2] + resp[-1] != SEPARATOR:
+			resp += self.command_socket.recv(1).decode('utf-8')
+		lenght = int(resp.split(SEPARATOR)[1])
+		resp = self.command_socket.recv(lenght).decode('utf-8')
+		return resp
+
 
 	''' Create new empty file '''
 	def create(self, filename):
 		print("create called")
-		# i guess something like touch
-		# pass
+		req = self.make_req('crf', filename)
+		self.command_socket.send(req)
+		resp = self.get_response(self.command_socket, 'crf')
+		print("create " + str(resp))
+
 
 	''' 
 	Read file from DFS
@@ -50,7 +87,34 @@ class Client:
 	'''
 	def read(self, filename):
 		print("read called")
+		req = self.make_req('rdf', filename)
+		self.command_socket.send(req)
 
+		storage_port = self.get_response()
+		if int(storage_port):
+			self.command_socket.send('y'.encode('utf-8'))
+		else:
+			print("error in read")
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.bind(('', storage_port))
+		sock.listen(5)
+
+		with open(filename, "wb") as f:
+			while True:
+				data = sock.recv(BUFFER_SIZE)
+				if not data:
+					break
+				f.write(data)
+		f.close()
+
+		# close the socket
+		sock.close()
+
+		# resp = self.get_response(self.command_socket, 'crf')
+		# print("create " + str(resp))
+		# return resp
 	''' 
 	Upload file to DFS
 	'''
@@ -140,19 +204,23 @@ class Client:
 				 }
 		mes = command.split(' ')
 		print(mes)
-		rtype = mes[0]
-		res = 0
-		if len(mes) == 1:
-			# res = types[mes[0]]()
-			res = getattr(self, types[mes[0]])()
-		elif len(mes) == 2:
-			# res = types[mes[0]](mes[1])
-			res = getattr(self, types[mes[0]])(mes[1])
-		elif len(mes) == 3:
-			res = getattr(self, types[mes[0]])(mes[1], mes[2])
-			# res = types[mes[0]](mes[1], mes[2])
-		# lenght = len(res)
-		# return rtype, lenght, res
+		# check if command in the commands list
+		if not mes[0] in types:
+			print("Write command from command list")
+			self.user_interface()
+		elif mes[0] == 'read' or mes[0] == 'write':
+			res = getattr(self, types[mes[0]]())
+		else:
+			# if len(mes) == 1:
+			# 	res = getattr(self, types[mes[0]])()
+			# elif len(mes) == 2:
+			# 	res = getattr(self, types[mes[0]])(mes[1])
+			# elif len(mes) == 3:
+			# 	res = getattr(self, types[mes[0]])(mes[1], mes[2])
+			req = self.make_req(mes)
+			self.command_socket.send(req)
+			resp = self.get_response(self.command_socket, mes[0])
+			print(resp)
 
 
 	def user_interface(self):
@@ -171,9 +239,6 @@ class Client:
 
 
 def main():
-
-
-
 	client = Client()
 	# client.init()
 
