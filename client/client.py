@@ -134,7 +134,7 @@ class Client:
 		req = self.make_req('wrf', filename, file_size)
 		self.command_socket.send(req)
 
-		# caculate number of 2KB chunks in the file
+		# calculate number of 2KB chunks in the file
 		# and size of remaining data
 		n_blocks = file_size // BUFFER_SIZE
 		extra_block = file_size - n_blocks * BUFFER_SIZE
@@ -161,7 +161,7 @@ class Client:
 		extra_block = file_size - n_blocks * BUFFER_SIZE
 
 		# send parts of size BUFFERSIZE to storage
-		f = open(filename, 'wb')
+		f = open(filename, 'rb')
 		for i in range(n_blocks):
 			block = f.read(BUFFER_SIZE)
 			storage_socket.send(block)
