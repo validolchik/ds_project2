@@ -9,6 +9,7 @@ BUFFER_SIZE = 2048
 COMMAND_PORT = 3500 #port for commands from name server
 DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502
+FILE_SHARING_PORT = 3503
 
 
 HOME_DIR = './data'#root directory for dfs files
@@ -156,7 +157,7 @@ class Storage(Thread):
 		f = open(filename, 'rb')
 
 		for i in range(n_blocks):
-			block = f.read(block)
+			block = f.read(BUFFER_SIZE)
 			sock.send(block)
 
 		block = f.read(extra_block)
@@ -227,7 +228,7 @@ class Storage(Thread):
 	'''
 	def fsTree(self):
 		stream = os.popen('ls ' + HOME_DIR)
-		res = stream.read()
+		res = stream.read().replace(' ', '\n')
 		return res
 
 

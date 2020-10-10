@@ -89,6 +89,13 @@ class NameServer():
 	Read servers file structures
 	'''
 	def get_storage_catalogs(self):
+		self.storages_catalogs = {}
+		for s in self.storages:
+			req = self.make_req('inf')
+			self.command_sock.connect((s, COMMAND_PORT))
+			self.command_sock.send(req)
+			resp = self.get_response(self.command_sock, 'inf')
+			self.storages_catalogs[s] = resp
 		return 'Not yet'
 
 	'''
@@ -149,9 +156,14 @@ class NameServer():
 
 
 	'''
+	Check which files are not replicated to different storages
 	'''
 	def sync(self):
-		files = self.tree_to_str().split('\n')
+		files = [f for f in self.tree_to_str().split('\n') if  f.data[-1] != '/']
+		lack = {}
+		for s in self.storages_catalogs:
+			for f in self.storage_catalogs[s]:
+				pass
 		return 'Not yet'
 
 	'''
@@ -203,8 +215,8 @@ class NameServer():
 				'rmdir':self.deldir,
 				'mkdir':self.mkdir,
 				'opdir':self.opendir,
-				'down':self.download,
-				'up':self.upload,
+				'rdf':self.read,
+				'wrf':self.write,
 				'exit':self.exit
 				}
 
@@ -227,11 +239,11 @@ class NameServer():
 	Get response and extract body
 	'''
 	def get_response(self, sock, rtype):
-		resp = self.command_sock.recv(len(rtype)+len(SEPARATOR)).decode('utf-8')
+		resp = sock.recv(len(rtype)+len(SEPARATOR)).decode('utf-8')
 		while resp[-2] + resp[-1] != SEPARATOR:
-			resp += self.command_sock.recv(1).decode('utf-8')
+			resp += sock.recv(1).decode('utf-8')
 		lenght = int(resp.split(SEPARATOR)[1])
-		resp = self.command_sock.recv(lenght).decode('utf-8')
+		resp = sock.recv(lenght).decode('utf-8')
 		return resp
 
 	'''
