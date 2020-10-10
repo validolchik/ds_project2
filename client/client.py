@@ -236,7 +236,7 @@ class Client:
 			  "Copy file - 'copy {filename}'\n"
 			  "File move - 'move {filename} {destination_path}'\n"
 			  "Open directory - 'cd {directory}'\n"
-			  "Read directory - 'ls {directory}'\n"
+			  "Read current directory - 'ls'\n"
 			  "Make directory - 'mkdir {directory}'\n"
 			  "Delete directory - 'deldir {directory}'\n"
 			  "List available commands - 'commands'\n"
@@ -244,8 +244,8 @@ class Client:
 
 	def process_command(self, command):
 		types = {'create': 'crf',
-				 'read': 'rdf',
-				 'write': 'wrf',
+				 'read': 'read',
+				 'write': 'write',
 				 'delete': 'rmf',
 				 'info':'inf',
 				 'copy': 'cpf',
