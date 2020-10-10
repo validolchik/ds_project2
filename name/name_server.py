@@ -199,13 +199,18 @@ class NameServer():
 	def run(self):
 		mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 		rtype, lenght, res = self.parse_and_exec(mess)
-		while rtype != 'exit':
-			resp = self.make_resp(rtype, str(lenght), res)
-			print(resp)
-			self.client_sock.send(resp)
-			self.save_catalog()
-			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
-			rtype, lenght, res = self.parse_and_exec(mess)
+		connected = True
+		while connected:
+			try:
+				resp = self.make_resp(rtype, str(lenght), res)
+				print(resp)
+				self.client_sock.send(resp)
+				self.save_catalog()
+				mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
+				rtype, lenght, res = self.parse_and_exec(mess)
+			except:
+				connected = False
+		self.close()
 
 	'''
 	parse and execute the message
@@ -326,6 +331,7 @@ class NameServer():
 
 		data = str(port) + SEPARATOR + str(filesize)
 		resp = self.make_resp('rdf', str(len(data)), data)
+		print(resp)
 		self.client_sock.send(resp)
 		#wait for confirmation
 		conf = self.client_sock.recv(1).decode()
@@ -367,7 +373,8 @@ class NameServer():
 
 		#tell random storage to download a file from the client
 		storage = random.choice(self.storages)
-		file = Tree(filename, False, self.curr_dir, 'size='+filesize + ' replicas=1')
+		file = Tree(filename, False, self.curr_dir)
+		file.info = 'size='+filesize
 		self.curr_dir.add_child(file)
 		path = self.get_path(file)
 		req = self.make_req('down', path, filesize, self.client_host, str(port))
