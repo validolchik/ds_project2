@@ -243,17 +243,17 @@ class Client:
 			  "Exit - dfs_exit")
 
 	def process_command(self, command):
-		types = {'create': 'create',
-				 'read': 'read',
-				 'write': 'write',
-				 'delete': 'delete',
-				 'info':'info',
-				 'copy': 'copy',
-				 'move': 'move',
-				 'cd': 'opendir',
-				 'ls': 'readdir',
+		types = {'create': 'crf',
+				 'read': 'rdf',
+				 'write': 'wrf',
+				 'delete': 'rmf',
+				 'info':'inf',
+				 'copy': 'cpf',
+				 'move': 'mvf',
+				 'cd': 'opdir',
+				 'ls': 'rddir',
 				 'mkdir':'mkdir',
-				 'deldir': 'deldir',
+				 'deldir': 'rmdir',
 				 'commands': 'user_interface',
 				 'init': 'init'
 				 }
@@ -266,13 +266,16 @@ class Client:
 		elif mes[0] == 'read' or mes[0] == 'write':
 			res = getattr(self, types[mes[0]])(mes[1])
 		else:
-			# if len(mes) == 1:
-			# 	res = getattr(self, types[mes[0]])()
-			# elif len(mes) == 2:
-			# 	res = getattr(self, types[mes[0]])(mes[1])
-			# elif len(mes) == 3:
-			# 	res = getattr(self, types[mes[0]])(mes[1], mes[2])
-			req = self.make_req(mes)
+			req = None
+			if len(mes) == 1:
+				# res = getattr(self, types[mes[0]])()
+				req = self.make_req(types[mes[0]])
+			elif len(mes) == 2:
+				# res = getattr(self, types[mes[0]])(mes[1])
+				req = self.make_req(types[mes[0]], mes[1])
+			elif len(mes) == 3:
+				req = self.make_req(types[mes[0]], mes[1], mes[2])
+				# res = getattr(self, types[mes[0]])(mes[1], mes[2])
 			self.command_socket.send(req)
 			resp = self.get_response(self.command_socket, mes[0])
 			print(resp)
