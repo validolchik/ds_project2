@@ -134,7 +134,8 @@ class Client:
 		req = self.make_req('wrf', filename, str(file_size))
 		self.command_socket.send(req)
 
-		resp = self.get_response(self.command_socket, 'wrf')
+		# resp = self.get_response(self.command_socket, 'wrf')
+		resp = self.command_socket.recv(4).decode('utf-8')
 		storage_port = resp.decode('utf-8')
 		if int(storage_port):
 			self.command_socket.send('e'.encode('utf-8'))
