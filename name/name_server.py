@@ -13,7 +13,7 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'#?
 
-FILE_PORTS = {i:True for i in range(4000,4100)}
+FILE_PORTS = [4000,4100]
 
 
 #Tree for file system catalog
@@ -73,9 +73,11 @@ class NameServer():
 		if not os.path.isfile(CATALOG_FILE):
 			with open(CATALOG_FILE, 'w') as f:
 				f.write(self.tree_to_str())
+				f.close()
 		#then read the file
 		with open(CATALOG_FILE) as f:
 			self.CATALOG_ROOT = self.str_to_tree(f.read())
+			f.close()
 
 
 	'''
@@ -84,6 +86,7 @@ class NameServer():
 	def save_catalog(self):
 		with open(CATALOG_FILE, 'w') as f:
 			f.write(self.tree_to_str())
+			f.close()
 
 	'''
 	Read servers file structures
@@ -92,9 +95,10 @@ class NameServer():
 		self.storages_catalogs = {}
 		for s in self.storages:
 			req = self.make_req('inf')
-			self.command_sock.connect((s, COMMAND_PORT))
-			self.command_sock.send(req)
-			resp = self.get_response(self.command_sock, 'inf')
+			command_sock = socket.create_connection((s, COMMAND_PORT))
+			command_sock.send(req)
+			resp = self.get_response(command_sock, 'inf')
+			command_sock.close()
 			self.storages_catalogs[s] = resp
 		return 'Not yet'
 
@@ -103,7 +107,6 @@ class NameServer():
 	'''
 	def __init__(self):
 		self.curr_dir = CATALOG_ROOT
-		self.command_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		explorer = Thread(target = self.explorer, daemon=True)
 		explorer.start()
 
@@ -259,10 +262,11 @@ class NameServer():
 		
 		res = ''
 		for s in self.storages:
-			self.command_sock.connect((s, COMMAND_PORT))
+			command_sock = socket.create_connection((s, COMMAND_PORT))
 			req = self.make_req('init')
-			self.command_sock.send(req)
-			resp = self.get_response(self.command_sock, 'init')
+			command_sock.send(req)
+			resp = self.get_response(command_sock, 'init')
+			command_sock.close()
 			res += 'storage ' + s + resp + '\n'
 		return res
 
@@ -284,11 +288,12 @@ class NameServer():
 			#path += FILENAME_SEPARATOR + filename
 			storage = random.choice(self.storages)
 			req = self.make_req('crf', path)
-			self.command_sock.connect((storage, COMMAND_PORT))
-			self.command_sock.send(req)
+			command_sock = socket.create_connection((storage, COMMAND_PORT))
+			command_sock.send(req)
 
 			#wait for confirmation
-			resp = self.get_response(self.command_sock, 'crf')
+			resp = self.get_response(command_sock, 'crf')
+			command_sock.close()
 			res = resp
 			if res == '':
 				res = 'File created'
@@ -315,9 +320,8 @@ class NameServer():
 		#otherwise continue
 
 		#give client a port
-		port = random.choise(FILE_PORTS)
-		while not FILE_PORTS[port]:
-			port = random.choise(FILE_PORTS)
+		port = random.choice(FILE_PORTS)
+
 		filesize = file.info.split(SEPARATOR)[0][5:]
 
 		self.client_sock.send(str(port+SEPARATOR+filesize).encode('utf-8'))
@@ -325,14 +329,16 @@ class NameServer():
 		conf = self.client_sock.recv(1).decode()
 
 		#tell random storage to upload a file to the client
-		storage = random.choise(self.storages)
+		storage = random.choice(self.storages)
 		path = self.get_path(file)
-		req = self.make_req('up', path, filesize, (self.client_host, port))
-		self.command_sock.connect((storage, COMMAND_PORT))
-		self.command_sock.send(req)
+		req = self.make_req('up', path, filesize, self.client_host, str(port))
+		command_sock = socket.create_connection((storage, COMMAND_PORT))
+		command_sock.send(req)
+
 
 		#wait for confirmation
-		resp = self.get_response(self.command_sock, 'up')
+		resp = self.get_response(command_sock, 'up')
+		command_sock.close()
 
 		return resp
 
@@ -351,24 +357,24 @@ class NameServer():
 		#otherwise continue
 
 		#give client a port
-		port = random.choise(FILE_PORTS)
-		while not FILE_PORTS[port]:
-			port = random.choise(FILE_PORTS)
+		port = random.choice(FILE_PORTS)
+
 		self.client_sock.send(str(port).encode('utf-8'))
 		#wait for confirmation
 		conf = self.client_sock.recv(1).decode()
 
 		#tell random storage to download a file from the client
-		storage = random.choise(self.storages)
+		storage = random.choice(self.storages)
 		file = Tree(filename, False, self.curr_dir, 'size='+filesize + ' replicas=1')
 		self.curr_dir.add_child(file)
 		path = self.get_path(file)
-		req = self.make_req('down', path, filesize, (self.client_host, port))
-		self.command_sock.connect((storage, COMMAND_PORT))
-		self.command_sock.send(req)
+		req = self.make_req('down', path, filesize, self.client_host, str(port))
+		command_sock = socket.create_connection((storage, COMMAND_PORT))
+		command_sock.send(req)
 
 		#wait for confirmation
-		resp = self.get_response(self.command_sock, 'down')
+		resp = self.get_response(command_sock, 'down')
+		command_sock.close()
 		
 		return resp
 

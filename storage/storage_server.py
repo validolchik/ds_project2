@@ -85,6 +85,8 @@ class Storage(Thread):
 			res = types[mes[0]](mes[1], mes[2])
 		elif len(mes) == 5:
 			res = types[mes[0]](mes[1], mes[2], mes[3])
+		elif len(mes) == 6:
+			res = types[mes[0]](mes[1], mes[2], mes[3], mes[4])
 		
 		return rtype, len(res), res
 
@@ -113,7 +115,7 @@ class Storage(Thread):
 	''' 
 	Download file from Client
 	'''
-	def download(self, filename, filesize, client):
+	def download(self, filename, filesize, host, port):
 		file_size = int(filesize)
 
 		#caculate number of 2KB chunks in the file
@@ -123,7 +125,7 @@ class Storage(Thread):
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-		sock.connect(client)
+		sock.connect((host, int(port)))
 
 		f = open(filename, 'wb')
 
@@ -141,7 +143,7 @@ class Storage(Thread):
 	''' 
 	Upload file to Clent
 	'''
-	def upload(self, filename, client):
+	def upload(self, filename, host, port):
 		file_size = os.path.getsize(filename)
 
 		#caculate number of 2KB chunks in the file
