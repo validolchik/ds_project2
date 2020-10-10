@@ -196,6 +196,7 @@ class NameServer():
 	def parse_and_exec(self, message):
 		#dictionary with all possible functions
 		types ={'init':self.init,
+				'inf':self.info,
 				'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
@@ -388,7 +389,7 @@ class NameServer():
 		if file == None:
 			res = 'No such file exist'
 		else:
-			res = file.info
+			res = file.info.replace(SEPARATOR, ' ')
 
 		return res
 
