@@ -1,5 +1,5 @@
 import socket
-
+import os
 
 SEPARATOR = "][" # separator for filename and size transferring
 BUFFER_SIZE = 2048 # send 4096 bytes each time step
@@ -90,36 +90,91 @@ class Client:
 		req = self.make_req('rdf', filename)
 		self.command_socket.send(req)
 
-		storage_port = self.get_response()
+		storage_port, filesize = self.get_response(self.command_socket, 'rdf').decode('utf-8').split(SEPARATOR)
 		if int(storage_port):
 			self.command_socket.send('y'.encode('utf-8'))
+			storage_port = int(storage_port)
 		else:
-			print("error in read")
+			return "error"
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('', storage_port))
 		sock.listen(5)
 
-		with open(filename, "wb") as f:
-			while True:
-				data = sock.recv(BUFFER_SIZE)
-				if not data:
-					break
-				f.write(data)
+		storage_socket, address = sock.accept()
+
+		file_size = int(filesize)
+
+		# caculate number of 2KB chunks in the file
+		# and size of remaining data
+		n_blocks = file_size // BUFFER_SIZE
+		extra_block = file_size - n_blocks * BUFFER_SIZE
+
+		f = open(filename, 'wb')
+
+		for i in range(n_blocks):
+			block = storage_socket.recv(BUFFER_SIZE)
+			f.write(block)
+
+		block = storage_socket.recv(extra_block)
+		f.write(block)
 		f.close()
-
-		# close the socket
 		sock.close()
+		storage_socket.close()
+		return "success"
 
-		# resp = self.get_response(self.command_socket, 'crf')
-		# print("create " + str(resp))
-		# return resp
+
 	''' 
 	Upload file to DFS
 	'''
 	def write(self, filename):
 		print("write called")
+		file_size = os.path.getsize(filename)
+		req = self.make_req('wrf', filename, file_size)
+		self.command_socket.send(req)
+
+		# caculate number of 2KB chunks in the file
+		# and size of remaining data
+		n_blocks = file_size // BUFFER_SIZE
+		extra_block = file_size - n_blocks * BUFFER_SIZE
+
+		resp = self.get_response(self.command_socket, 'wrf')
+		storage_port = resp.decode('utf-8')
+		if int(storage_port):
+			self.command_socket.send('e'.encode('utf-8'))
+			storage_port = int(storage_port)
+		else:
+			print("error in writing")
+			return "error"
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.bind(('', storage_port))
+		sock.listen(5)
+
+		storage_socket, address = sock.accept()
+
+		# calculate number of 2KB chunks in the file
+		# and size of remaining data
+		n_blocks = file_size // BUFFER_SIZE
+		extra_block = file_size - n_blocks * BUFFER_SIZE
+
+		# send parts of size BUFFERSIZE to storage
+		f = open(filename, 'wb')
+		for i in range(n_blocks):
+			block = f.read(BUFFER_SIZE)
+			storage_socket.send(block)
+
+		# send remaining part of file
+		extra_block = f.read(extra_block)
+		storage_socket.send(extra_block)
+		f.write(block)
+		f.close()
+		sock.close()
+		storage_socket.close()
+		return "success"
+
 
 	''' 
 	Delete existing file from DFS
@@ -209,7 +264,7 @@ class Client:
 			print("Write command from command list")
 			self.user_interface()
 		elif mes[0] == 'read' or mes[0] == 'write':
-			res = getattr(self, types[mes[0]]())
+			res = getattr(self, types[mes[0]])(mes[1])
 		else:
 			# if len(mes) == 1:
 			# 	res = getattr(self, types[mes[0]])()
