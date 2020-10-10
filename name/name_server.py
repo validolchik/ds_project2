@@ -196,7 +196,7 @@ class NameServer():
 	def run(self):
 		mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 		rtype, lenght, res = self.parse_and_exec(mess)
-		while rtype != self.exit:
+		while rtype != 'exit':
 			resp = self.make_resp(rtype, str(lenght), res)
 			print(resp)
 			self.client_sock.send(resp)
@@ -262,7 +262,7 @@ class NameServer():
 			self.command_sock.connect((s, COMMAND_PORT))
 			req = self.make_req('init')
 			self.command_sock.send(req)
-			resp = self.get_response(self,command_sock, 'init')
+			resp = self.get_response(self.command_sock, 'init')
 			res += 'storage ' + s + resp + '\n'
 		return res
 
@@ -277,7 +277,7 @@ class NameServer():
 
 		if not already_exists:
 			#add to the tree
-			new_file = Tree(filename, False, self.curr_dirs)
+			new_file = Tree(filename, False, self.curr_dir)
 			self.curr_dir.add_child(new_file)
 			#tell random storage to create a file
 			path = self.get_path(new_file)
@@ -326,8 +326,9 @@ class NameServer():
 
 		#tell random storage to upload a file to the client
 		storage = random.choise(self.storages)
+		path = self.get_path(file)
 		req = self.make_req('up', path, filesize, (self.client_host, port))
-		self.command_sock.connect((s, COMMAND_PORT))
+		self.command_sock.connect((storage, COMMAND_PORT))
 		self.command_sock.send(req)
 
 		#wait for confirmation
@@ -359,13 +360,16 @@ class NameServer():
 
 		#tell random storage to download a file from the client
 		storage = random.choise(self.storages)
+		file = Tree(filename, False, curr_dir, 'size='+filesize + ' replicas=1')
+		self.curr_dir.add_child(file)
+		path = self.get_path(file)
 		req = self.make_req('down', path, filesize, (self.client_host, port))
-		self.command_sock.connect((s, COMMAND_PORT))
+		self.command_sock.connect((storage, COMMAND_PORT))
 		self.command_sock.send(req)
 
 		#wait for confirmation
 		resp = self.get_response(self.command_sock, 'down')
-		self.curr_dir.add_child(filename, False, curr_dir, 'size='+filesize + ' replicas=1')
+		
 		return resp
 
 	''' 
@@ -473,7 +477,7 @@ class NameServer():
 	'''
 	Move given file to specified directory
 	'''
-	def move(self, file, newpath):
+	def move(self, filename, newpath):
 		res = ''
 
 		#check if file with that name exists
@@ -582,7 +586,7 @@ class NameServer():
 
 		#find a directory with given name
 		for i in range(len(self.curr_dir.children)):
-			if self.curr_dir.children[i].data == filename and self.curr_dir.children[i].is_dir:
+			if self.curr_dir.children[i].data == dirname and self.curr_dir.children[i].is_dir:
 				el = i
 
 
