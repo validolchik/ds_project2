@@ -64,7 +64,7 @@ class Client:
 	Get response and extract body
 	'''
 	def get_response(self, sock, rtype):
-		resp = self.command_socket.recv(len(rtype)+len(SEPARATOR)).decode('utf-8')
+		resp = self.command_socket.recv(len(rtype)+len(SEPARATOR)+1).decode('utf-8')
 		while resp[-2] + resp[-1] != SEPARATOR:
 			resp += self.command_socket.recv(1).decode('utf-8')
 		lenght = int(resp.split(SEPARATOR)[1])
