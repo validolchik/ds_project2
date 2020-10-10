@@ -159,7 +159,7 @@ class Storage(Thread):
 			sock.send(block)
 
 		block = f.read(extra_block)
-		sock.send(extra_block)
+		sock.send(block)
 		sock.close()
 		
 
