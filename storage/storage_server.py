@@ -134,6 +134,7 @@ class Storage(Thread):
 		block = sock.recv(extra_block)
 		f.write(block)
 		sock.close()
+		f.close()
 
 		return str(file_size) + ' bytes recieved'
 
@@ -161,6 +162,7 @@ class Storage(Thread):
 		block = f.read(extra_block)
 		sock.send(block)
 		sock.close()
+		f.close()
 		
 
 		return str(file_size) + ' bytes sent'
