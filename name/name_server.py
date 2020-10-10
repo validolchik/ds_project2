@@ -2,7 +2,6 @@ import socket, os
 from threading import Thread
 import random
 import time
-import json
 
 SEPARATOR = "][" # separator for filename and size transferring
 FILENAME_SEPARATOR = '|'#separates directories to save on storage server
@@ -73,15 +72,15 @@ class NameServer():
 		#if no catalogue file exist create one
 		if not os.path.isfile(CATALOG_FILE):
 			with open(CATALOG_FILE, 'w') as f:
-				json.dump({}, f)
+				f.write(self.tree_to_str())
 		#then read the file
 		with open(CATALOG_FILE) as f:
-			self.catalog = json.load(f)
+			self.CATALOG_ROOT = self.str_to_tree(f.read())
 
 	'''
 	Read servers file structures
 	'''
-	def get_storage_catalog(self):
+	def get_storage_catalogs(self):
 		return 'Not yet'
 
 	'''
@@ -564,10 +563,42 @@ class NameServer():
 
 
 	'''
-	Return representation of the file system
+	Depth first search
+	return all leave nodes
 	'''
-	def tree(self):
-		return 'not yet'
+	def dfs(self, node):
+		leaves = []
+		for c in node.children:
+			if len(c.children) == 0:
+				leaves.append(c)
+			else:
+				leaves.append(self.dfs(c))
+		return leaves
+
+
+	'''
+	String representation of the catalog
+	'''
+	def tree_to_str(self):
+		leaves = self.dfs(CATALOG_ROOT)
+		res = ''
+		for l in leaves:
+			res += self.get_path(l)
+			if l.is_dir:
+				res += '/'
+			res += '\n'
+		return res
+
+
+
+	'''
+	Parse string representation into a tree
+	'''
+	def str_to_tree(self, s):
+		return 'Not yet'
+
+
+
 
 
 
