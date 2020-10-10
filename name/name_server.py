@@ -277,7 +277,7 @@ class NameServer():
 			res = resp
 			if res == '':
 				res = 'File craeted'
-				new_file.info += ' replicas=1'
+				new_file.info += SEPARATOR+'replicas=1'
 			else:
 				del self.curr_dir.children[-1]
 		else:
@@ -289,7 +289,7 @@ class NameServer():
 	Read file from DFS
 	Upload it to client host
 	'''
-	def read(self, filename, filesize):
+	def read(self, filename):
 		#check if file with such name  exists
 		file = None
 		for f in self.curr_dir.children:
@@ -303,7 +303,9 @@ class NameServer():
 		port = random.choise(FILE_PORTS)
 		while not FILE_PORTS[port]:
 			port = random.choise(FILE_PORTS)
-		self.client_sock.send(str(port).encode('utf-8'))
+		filesize = file.info.split(SEPARATOR)[0][5:]
+
+		self.client_sock.send(str(port+SEPARATOR+filesize).encode('utf-8'))
 		#wait for confirmation
 		conf = self.client_sock.recv(1).decode()
 

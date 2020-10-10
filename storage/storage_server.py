@@ -140,8 +140,8 @@ class Storage(Thread):
 	''' 
 	Upload file to Clent
 	'''
-	def upload(self, filename, filesize, client):
-		file_size = int(filesize)
+	def upload(self, filename, client):
+		file_size = os.path.getsize(filename)
 
 		#caculate number of 2KB chunks in the file
 		#and size of remaining data
