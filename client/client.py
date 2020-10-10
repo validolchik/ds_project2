@@ -15,7 +15,7 @@ BUFFER_SIZE = 2048 # send 4096 bytes each time step
 class Client:
 	def __init__(self):
 		# self.connect_to_name_server('localhost', 6235)
-		self.command_socket = self.connect_to_server('', 6235)
+		self.command_socket = self.connect_to_server('192.168.1.33', 6235)
 		self.user_interface()
 	
 	'''
@@ -64,11 +64,11 @@ class Client:
 	Get response and extract body
 	'''
 	def get_response(self, sock, rtype):
-		resp = self.command_socket.recv(len(rtype)+len(SEPARATOR)+1).decode('utf-8')
+		resp = sock.recv(len(rtype)+len(SEPARATOR)+1).decode('utf-8')
 		while resp[-2] + resp[-1] != SEPARATOR:
-			resp += self.command_socket.recv(1).decode('utf-8')
+			resp += sock.recv(1).decode('utf-8')
 		lenght = int(resp.split(SEPARATOR)[1])
-		resp = self.command_socket.recv(lenght).decode('utf-8')
+		resp = sock.recv(lenght).decode('utf-8')
 		return resp
 
 
@@ -97,10 +97,10 @@ class Client:
 		else:
 			return "error"
 
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('', storage_port))
-		sock.listen(5)
+		sock.listen()
 
 		storage_socket, address = sock.accept()
 
@@ -120,9 +120,11 @@ class Client:
 		block = storage_socket.recv(extra_block)
 		f.write(block)
 		f.close()
+		resp = self.get_response(self.command_socket, 'wrf')
+		
 		sock.close()
 		storage_socket.close()
-		return "success"
+		return resp
 
 
 	''' 
@@ -144,7 +146,7 @@ class Client:
 			print("error in writing")
 			return "error"
 
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('', storage_port))
 		sock.listen()
@@ -165,11 +167,13 @@ class Client:
 		# send remaining part of file
 		extra_block = f.read(extra_block)
 		storage_socket.send(extra_block)
-		f.write(block)
 		f.close()
+		
+		resp = self.get_response(self.command_socket, 'wrf')
+
 		sock.close()
 		storage_socket.close()
-		return "success"
+		return resp
 
 
 	''' 
