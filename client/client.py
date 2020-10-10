@@ -131,13 +131,8 @@ class Client:
 	def write(self, filename):
 		print("write called")
 		file_size = os.path.getsize(filename)
-		req = self.make_req('wrf', filename, file_size)
+		req = self.make_req('wrf', filename, str(file_size))
 		self.command_socket.send(req)
-
-		# calculate number of 2KB chunks in the file
-		# and size of remaining data
-		n_blocks = file_size // BUFFER_SIZE
-		extra_block = file_size - n_blocks * BUFFER_SIZE
 
 		resp = self.get_response(self.command_socket, 'wrf')
 		storage_port = resp.decode('utf-8')
