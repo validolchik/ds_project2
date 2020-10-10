@@ -151,6 +151,7 @@ class NameServer():
 	'''
 	'''
 	def sync(self):
+		files = self.tree_to_str().split('\n')
 		return 'Not yet'
 
 	'''
@@ -276,7 +277,7 @@ class NameServer():
 			res = resp
 			if res == '':
 				res = 'File craeted'
-				new_file.info += '\nreplicas=1'
+				new_file.info += ' replicas=1'
 			else:
 				del self.curr_dir.children[-1]
 		else:
@@ -347,7 +348,7 @@ class NameServer():
 
 		#wait for confirmation
 		resp = self.get_response(self.command_sock, 'down')
-
+		self.curr_dir.add_child(filename, False, curr_dir, 'size='+filesize + ' replicas=1')
 		return resp
 
 	''' 
@@ -623,7 +624,7 @@ class NameServer():
 				if node == l[-1]:
 					is_dir = node[-1]=='/'
 					if is_dir:
-						new_child = Tree(node[:-1], True, curr_dir))
+						new_child = Tree(node[:-1], True, curr_dir)
 					else:
 						info = node.split(SEPARATOR)[-1]
 						new_child = (Tree(node, False, curr_dir, info))
@@ -642,7 +643,7 @@ class NameServer():
 
 
 def main():
-	#initialize command socket and start listening
+	#initialize client socket and start listening
 	client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	client_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	client_sock.bind(('', CLIENT_PORT))
@@ -650,8 +651,6 @@ def main():
 	print("listening in host {} on port {}".format("local", CLIENT_PORT))
 	
 	ns = NameServer()
-	print(ns.tree_to_str())
-
 
 	#wait for connection
 	while True:
