@@ -68,7 +68,8 @@ class Storage(Thread):
 				'mvf':self.move,
 				'down':self.download,
 				'up':self.upload,
-				'inf':self.fsTree
+				'inf':self.fsTree,
+				'init':self.init
 				}
 
 		#split message and get request type
@@ -94,11 +95,14 @@ class Storage(Thread):
 	clear all
 	'''
 	def init(self):
-		stream = os.popen('rm -rf ' + HOME_DIR + '/')
-		stream = os.popen('df -a -h '+ HOME_DIR + '/')
-		t = stream.read().split('\n')[1].split(' ')
+		os.system('rm -rf ' + HOME_DIR + '/')
+		os.system('mkdir '+ HOME_DIR)
+		stream = os.popen('df -a -h '+ HOME_DIR)
+		t = stream.read()
+		t = t.split('\n')[1].split(' ')
 		t = [i for i in t if i != '']
 		avaliable_space = t[3]
+		res = ''
 		res += avaliable_space
 		return res
 
@@ -117,6 +121,8 @@ class Storage(Thread):
 	'''
 	def download(self, filename, filesize, host, port):
 		file_size = int(filesize)
+
+		filename = HOME_DIR + filename
 
 		#caculate number of 2KB chunks in the file
 		#and size of remaining data
@@ -143,9 +149,12 @@ class Storage(Thread):
 	''' 
 	Upload file to Clent
 	'''
-	def upload(self, filename, host, port):
+	def upload(self, name, host, port):
+		
+		filename = HOME_DIR + name
+		
 		file_size = os.path.getsize(filename)
-
+		print(filename + ' requested size:' + str(file_size))
 		#caculate number of 2KB chunks in the file
 		#and size of remaining data
 		n_blocks = file_size//BUFFER_SIZE
@@ -153,7 +162,7 @@ class Storage(Thread):
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-		sock.connect(client)
+		sock.connect((host, int(port)))
 
 		f = open(filename, 'rb')
 

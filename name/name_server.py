@@ -267,7 +267,7 @@ class NameServer():
 			command_sock.send(req)
 			resp = self.get_response(command_sock, 'init')
 			command_sock.close()
-			res += 'storage ' + s + resp + '\n'
+			res += 'storage ' + s + ' ' +resp + '\n'
 		return res
 
 	''' Create new empty file '''
@@ -324,14 +324,16 @@ class NameServer():
 
 		filesize = file.info.split(SEPARATOR)[0][5:]
 
-		self.client_sock.send(str(port+SEPARATOR+filesize).encode('utf-8'))
+		data = str(port) + SEPARATOR + str(filesize)
+		resp = self.make_resp('rdf', str(len(data)), data)
+		self.client_sock.send(resp)
 		#wait for confirmation
 		conf = self.client_sock.recv(1).decode()
 
 		#tell random storage to upload a file to the client
 		storage = random.choice(self.storages)
 		path = self.get_path(file)
-		req = self.make_req('up', path, filesize, self.client_host, str(port))
+		req = self.make_req('up', path, self.client_host, str(port))
 		command_sock = socket.create_connection((storage, COMMAND_PORT))
 		command_sock.send(req)
 
@@ -566,7 +568,7 @@ class NameServer():
 	'''
 	List the files in the directory
 	'''
-	def readdir(self, dir_path):
+	def readdir(self):
 		res = [[d.data, d.is_dir] for d in self.curr_dir.children]
 		for i in range(len(res)):
 			if res[i][1]:
