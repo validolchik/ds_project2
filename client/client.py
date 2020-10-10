@@ -90,7 +90,8 @@ class Client:
 		req = self.make_req('rdf', filename)
 		self.command_socket.send(req)
 
-		storage_port, filesize = self.get_response(self.command_socket, 'rdf').decode('utf-8').split(SEPARATOR)
+		storage_port, filesize = self.get_response(self.command_socket, 'rdf').split(SEPARATOR)
+		print(storage_port, filesize)
 		if int(storage_port):
 			self.command_socket.send('y'.encode('utf-8'))
 			storage_port = int(storage_port)
