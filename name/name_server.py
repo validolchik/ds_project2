@@ -59,9 +59,9 @@ class NameServer():
 	traverse tree backwards to get full path to the file
 	'''
 	def get_path(self, node):
-		res = ''
+		res = node.data
 		while node.parent != None:
-			res = node.parent + FILENAME_SEPARATOR + res
+			res = node.parent.data + FILENAME_SEPARATOR + res
 			node = node.parent
 		return res
 
@@ -115,13 +115,14 @@ class NameServer():
 		listener.start()
 		self.discover()
 		time.sleep(5)
-		self.get_storage_catalog()
+		#self.get_storage_catalog()
 		while True:
 			time.sleep(30)
 			self.discover()
 			time.sleep(5)
-			self.get_storage_catalogs()
-			self.sync()
+			print(self.storages)
+			#self.get_storage_catalogs()
+			#self.sync()
 
 	'''
 	Listen for replies to a broadcast
@@ -196,7 +197,8 @@ class NameServer():
 		mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 		rtype, lenght, res = self.parse_and_exec(mess)
 		while rtype != self.exit:
-			resp = self.make_resp(rtype, lenght, res)
+			resp = self.make_resp(rtype, str(lenght), res)
+			print(resp)
 			self.client_sock.send(resp)
 			self.save_catalog()
 			mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
@@ -215,6 +217,7 @@ class NameServer():
 				'rmdir':self.deldir,
 				'mkdir':self.mkdir,
 				'opdir':self.opendir,
+				'rddir':self.readdir,
 				'rdf':self.read,
 				'wrf':self.write,
 				'exit':self.exit
@@ -239,7 +242,7 @@ class NameServer():
 	Get response and extract body
 	'''
 	def get_response(self, sock, rtype):
-		resp = sock.recv(len(rtype)+len(SEPARATOR)).decode('utf-8')
+		resp = sock.recv(len(rtype)+len(SEPARATOR)+1).decode('utf-8')
 		while resp[-2] + resp[-1] != SEPARATOR:
 			resp += sock.recv(1).decode('utf-8')
 		lenght = int(resp.split(SEPARATOR)[1])
@@ -266,7 +269,6 @@ class NameServer():
 	''' Create new empty file '''
 	def create(self, filename):
 		res = ''
-
 		#check if file with that name already exists
 		already_exists = False
 		for c in self.curr_dir.children:
@@ -275,22 +277,22 @@ class NameServer():
 
 		if not already_exists:
 			#add to the tree
-			new_file = Tree(filename, False, curr_dir, 'size=0')
+			new_file = Tree(filename, False, self.curr_dirs)
 			self.curr_dir.add_child(new_file)
 			#tell random storage to create a file
 			path = self.get_path(new_file)
-			path += FILENAME_SEPARATOR + filename
-			storage = random.choise(self.storages)
+			#path += FILENAME_SEPARATOR + filename
+			storage = random.choice(self.storages)
 			req = self.make_req('crf', path)
-			self.command_sock.connect((s, COMMAND_PORT))
+			self.command_sock.connect((storage, COMMAND_PORT))
 			self.command_sock.send(req)
 
 			#wait for confirmation
 			resp = self.get_response(self.command_sock, 'crf')
 			res = resp
 			if res == '':
-				res = 'File craeted'
-				new_file.info += SEPARATOR+'replicas=1'
+				res = 'File created'
+				new_file.info = 'size=0'+SEPARATOR +'replicas=1'
 			else:
 				del self.curr_dir.children[-1]
 		else:

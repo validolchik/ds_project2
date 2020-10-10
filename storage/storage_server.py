@@ -52,7 +52,9 @@ class Storage(Thread):
 	#main thread
 	def run(self):
 		mess = self.command_sock.recv(BUFFER_SIZE).decode('utf-8')
-		resp = self.make_resp(self.parse_and_exec(mess))
+		rtype, lenght, data = self.parse_and_exec(mess)
+		resp = self.make_resp(rtype, str(lenght), data)
+		print(resp)
 		self.command_sock.send(resp)
 		self.close()
 
@@ -64,9 +66,6 @@ class Storage(Thread):
 		types ={'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
-				'rmdir':self.deldir,
-				'mkdir':self.mkdir,
-				'opdir':self.opendir,
 				'down':self.download,
 				'up':self.upload,
 				'inf':self.fsTree
@@ -94,21 +93,21 @@ class Storage(Thread):
 	'''
 	def init(self):
 		stream = os.popen('rm -rf ' + HOME_DIR + '/')
-		return stream.read()
-
-
-	''' Create new empty file '''
-	def create(self, filename):
-		stream = os.popen('touch ' + HOME_DIR+filename)
-		res = stream.read()
-		if res == '':
-			res == 'Success '
-
 		stream = os.popen('df -a -h '+ HOME_DIR + '/')
 		t = stream.read().split('\n')[1].split(' ')
 		t = [i for i in t if i != '']
 		avaliable_space = t[3]
 		res += avaliable_space
+		return res
+
+
+	''' Create new empty file '''
+	def create(self, filename):
+		print(filename)
+		stream = os.popen("touch '" + HOME_DIR+filename+"'")
+		res = stream.read()
+		if res == '':
+			res == 'Success '
 		return res
 
 	''' 
