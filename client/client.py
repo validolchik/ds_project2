@@ -291,6 +291,8 @@ class Client:
 		while answer != "n" and answer != "y":
 			answer = input("write 'y' or 'n':")
 		if answer == 'y':
+			req = self.make_req('exit')
+			self.command_socket.send(req)
 			exit()
 		else:
 			self.user_interface()
