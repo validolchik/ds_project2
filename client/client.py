@@ -97,10 +97,10 @@ class Client:
 		else:
 			return "error"
 
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('', storage_port))
-		sock.listen(5)
+		sock.listen()
 
 		storage_socket, address = sock.accept()
 
