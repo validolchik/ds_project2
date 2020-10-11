@@ -100,7 +100,8 @@ class NameServer():
 			command_sock.send(req)
 			resp = self.get_response(command_sock, 'inf')
 			command_sock.close()
-			self.storage_catalogs[s] = ['/'+resp.split('\n')[i] for i in range(len(resp.split('\n')))]
+			resp = resp.split('\n')
+			self.storage_catalogs[s] = ['/'+resp[i] for i in range(len(resp)) if resp[i] != '']
 
 	'''
 	start a storage discovery thread
@@ -163,11 +164,10 @@ class NameServer():
 	Check which files are not replicated to different storages
 	'''
 	def sync(self):
-		files = [f for f in self.tree_to_str().split('\n') if  f[-1] != '/']
-		lack = {}
-		for s in self.storage_catalogs:
-			for f in self.storage_catalogs[s]:
-				pass
+		files = [f for f in self.tree_to_str().split('\n') if f != '']
+		files = [f.split(SEPARATOR)[0] for f in files if f[-1] != '/']
+		print(self.storage_catalogs)
+		print(files)
 		return 'Not yet'
 
 	'''
@@ -205,11 +205,11 @@ class NameServer():
 				resp = self.make_resp(rtype, str(lenght), res)
 				print(resp)
 				self.client_sock.send(resp)
-				self.save_catalog()
 				mess = self.client_sock.recv(BUFFER_SIZE).decode('utf-8')
 				rtype, lenght, res = self.parse_and_exec(mess)
 			except:
 				connected = False
+		self.save_catalog()
 		self.close()
 
 	'''
