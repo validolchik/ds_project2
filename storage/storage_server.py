@@ -69,7 +69,8 @@ class Storage(Thread):
 				'down':self.download,
 				'up':self.upload,
 				'inf':self.fsTree,
-				'init':self.init
+				'init':self.init,
+				'rmf':self.delete
 				}
 
 		#split message and get request type

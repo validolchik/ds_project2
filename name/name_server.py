@@ -403,6 +403,15 @@ class NameServer():
 		if el == None:
 			res = 'No such file'
 		else:
+			path = self.get_path(new_file)
+			#tell all storages to delete the file
+			for s in self.sorages:
+				storage = s
+				req = self.make_req('rmf', path)
+				command_sock = socket.create_connection((storage, COMMAND_PORT))
+				command_sock.send(req)
+				resp = self.get_response(command_sock, 'crf')
+				command_sock.close()
 			del self.curr_dir.children[el]
 			res = 'Done'
 		return res
