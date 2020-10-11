@@ -76,8 +76,9 @@ class NameServer():
 				f.close()
 		#then read the file
 		with open(CATALOG_FILE) as f:
-			self.CATALOG_ROOT = self.str_to_tree(f.read())
+			CATALOG_ROOT = self.str_to_tree(f.read())
 			f.close()
+
 
 
 	'''
@@ -92,15 +93,14 @@ class NameServer():
 	Read servers file structures
 	'''
 	def get_storage_catalogs(self):
-		self.storages_catalogs = {}
+		self.storage_catalogs = {}
 		for s in self.storages:
 			req = self.make_req('inf')
 			command_sock = socket.create_connection((s, COMMAND_PORT))
 			command_sock.send(req)
 			resp = self.get_response(command_sock, 'inf')
 			command_sock.close()
-			self.storages_catalogs[s] = resp
-		return 'Not yet'
+			self.storage_catalogs[s] = ['/'+resp.split('\n')[i] for i in range(len(resp.split('\n')))]
 
 	'''
 	start a storage discovery thread
@@ -118,14 +118,14 @@ class NameServer():
 		listener.start()
 		self.discover()
 		time.sleep(5)
-		#self.get_storage_catalog()
+		self.get_storage_catalogs()
 		while True:
 			time.sleep(30)
 			self.discover()
 			time.sleep(5)
 			print(self.storages)
-			#self.get_storage_catalogs()
-			#self.sync()
+			self.get_storage_catalogs()
+			self.sync()
 
 	'''
 	Listen for replies to a broadcast
@@ -163,9 +163,9 @@ class NameServer():
 	Check which files are not replicated to different storages
 	'''
 	def sync(self):
-		files = [f for f in self.tree_to_str().split('\n') if  f.data[-1] != '/']
+		files = [f for f in self.tree_to_str().split('\n') if  f[-1] != '/']
 		lack = {}
-		for s in self.storages_catalogs:
+		for s in self.storage_catalogs:
 			for f in self.storage_catalogs[s]:
 				pass
 		return 'Not yet'
@@ -222,6 +222,7 @@ class NameServer():
 				'crf':self.create,
 				'cpf':self.copy,
 				'mvf':self.move,
+				'rmf':self.delete,
 				'rmdir':self.deldir,
 				'mkdir':self.mkdir,
 				'opdir':self.opendir,
@@ -337,8 +338,9 @@ class NameServer():
 		conf = self.client_sock.recv(1).decode()
 
 		#tell random storage to upload a file to the client
-		storage = random.choice(self.storages)
 		path = self.get_path(file)
+
+		storage = random.choice(self.storages)
 		req = self.make_req('up', path, self.client_host, str(port))
 		command_sock = socket.create_connection((storage, COMMAND_PORT))
 		command_sock.send(req)
@@ -403,15 +405,15 @@ class NameServer():
 		if el == None:
 			res = 'No such file'
 		else:
-			path = self.get_path(new_file)
+			path = self.get_path(self.curr_dir.children[el])
 			#tell all storages to delete the file
-			for s in self.sorages:
-				storage = s
-				req = self.make_req('rmf', path)
-				command_sock = socket.create_connection((storage, COMMAND_PORT))
-				command_sock.send(req)
-				resp = self.get_response(command_sock, 'crf')
-				command_sock.close()
+			# for s in self.sorages:
+			# 	storage = s
+			# 	req = self.make_req('rmf', path)
+			# 	command_sock = socket.create_connection((storage, COMMAND_PORT))
+			# 	command_sock.send(req)
+			# 	resp = self.get_response(command_sock, 'rmf')
+			# 	command_sock.close()
 			del self.curr_dir.children[el]
 			res = 'Done'
 		return res
@@ -454,7 +456,7 @@ class NameServer():
 			res = 'No such file exist'
 		else:
 			#move the file
-			new_file = file.deep_copy()
+			new_file = file.copy()
 			#del self.curr_dir.children[index]
 
 			newname = filename
@@ -517,7 +519,7 @@ class NameServer():
 			res = 'No such file exist'
 		else:
 			#move the file
-			new_file = file.deep_copy()
+			new_file = file.copy()
 			del self.curr_dir.children[index]
 
 			newname = filename
@@ -663,20 +665,21 @@ class NameServer():
 		lines = s.split('\n')
 		lines = [l.split(FILENAME_SEPARATOR) for l in lines]
 		for l in lines:
-			curr_dir = root
-			for node in l:
-				new_child = None
-				if node == l[-1]:
-					is_dir = node[-1]=='/'
-					if is_dir:
-						new_child = Tree(node[:-1], True, curr_dir)
+			if len(l)>1:
+				curr_dir = root
+				for node in l:
+					new_child = None
+					if node == l[-1]:
+						is_dir = node[-1]=='/'
+						if is_dir:
+							new_child = Tree(node[:-1], True, curr_dir)
+						else:
+							info = node.split(SEPARATOR)[-1]
+							new_child = (Tree(node, False, curr_dir, info))
 					else:
-						info = node.split(SEPARATOR)[-1]
-						new_child = (Tree(node, False, curr_dir, info))
-				else:
-					new_child = (Tree(node, True, curr_dir))
-				curr_dir.add_child(new_child)
-				curr_dir = new_child
+						new_child = (Tree(node, True, curr_dir))
+					curr_dir.add_child(new_child)
+					curr_dir = new_child
 
 		return root
 
@@ -696,6 +699,7 @@ def main():
 	print("listening in host {} on port {}".format("local", CLIENT_PORT))
 	
 	ns = NameServer()
+	ns.read_catalog()
 
 	#wait for connection
 	while True:
