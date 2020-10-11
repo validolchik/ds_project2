@@ -14,6 +14,7 @@ DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'#?
 
 FILE_PORTS = [4000,4100]
+FILE_SHARE = 3503
 
 
 #Tree for file system catalog
@@ -166,8 +167,52 @@ class NameServer():
 	def sync(self):
 		files = [f for f in self.tree_to_str().split('\n') if f != '']
 		files = [f.split(SEPARATOR)[0] for f in files if f[-1] != '/']
-		print(self.storage_catalogs)
-		print(files)
+		# print(self.storage_catalogs)
+		# print(files)
+
+		contained = self.storage_catalogs
+		missing = {}
+		extra = {}
+
+		for s in self.storages:
+			#check if storage is missing some files from
+			#those that are in the tree
+			missing[s] = []
+			for file in files:
+				if not file in contained[s]:
+					missing[s].append(file)
+
+			#check if storage has some additional, unlisted files
+			extra[s] = []
+			for file in contained[s]:
+				if not file in files:
+					extra[s].append(file)
+
+		#tell storages to delete extra files
+		for s in extra:
+			for f in extra[s]:
+				req = self.make_req('rmf', f)
+				command_sock = socket.create_connection((s, COMMAND_PORT))
+				command_sock.send(req)
+				resp = self.get_response(command_sock, 'crf')
+				command_sock.close()
+
+		#tell storages to get missing files
+		for s in missing:
+			for f in missing[s]:
+				s2 = ''
+				#find a storage that has this file
+				for storage in contained:
+					if f in contained[storage]:
+						s2 = storage
+
+				#order storages to share the file
+				#TODO
+
+
+		#print(contained)
+		#print(missing)
+		#print(extra)
 		return 'Not yet'
 
 	'''
