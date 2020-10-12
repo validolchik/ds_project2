@@ -214,11 +214,11 @@ class NameServer():
 	'''
 	def share(self, storage1, storage2, filename):
 		#tell storage1 to listen
-		req1 = self.make_req('shl', f)
+		req1 = self.make_req('shl', filename)
 		sock1 = socket.create_connection((storage1, COMMAND_PORT))
 		sock1.send(req1)
 		#tell storage2 to start sharing
-		req2 = self.make_req('shu', storage1, f)
+		req2 = self.make_req('shu', storage1, filename)
 		sock2 = socket.create_connection((storage2, COMMAND_PORT))
 		sock2.send(req2)
 		#wait for responses
