@@ -27,9 +27,9 @@ python3 client.py (ip address of the name server)
 ```
   
 ## Protocols  
-#Read and write  
+# Read and write  
 
-#Storage discover and synchronization  
+# Storage discover and synchronization  
 
-#Everything else
+# Everything else
 Every other message inthe system follows simple `type][arg1][arg2][padding` sturcture followed by the response `type][body_length][body'
