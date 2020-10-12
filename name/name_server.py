@@ -217,13 +217,14 @@ class NameServer():
 		req1 = self.make_req('shl', filename)
 		sock1 = socket.create_connection((storage1, COMMAND_PORT))
 		sock1.send(req1)
+		#wait for response
+		resp1 = self.get_response(sock1, 'shl')
+		sock1.close()
 		#tell storage2 to start sharing
 		req2 = self.make_req('shu', storage1, filename)
 		sock2 = socket.create_connection((storage2, COMMAND_PORT))
 		sock2.send(req2)
-		#wait for responses
-		resp1 = self.get_response(sock1, 'shl')
-		sock1.close()
+		#wait for response
 		resp2 = self.get_response(sock2, 'shu')
 		sock2.close()
 		#done
