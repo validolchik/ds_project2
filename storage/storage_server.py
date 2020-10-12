@@ -255,6 +255,11 @@ class Storage(Thread):
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 		sock.bind(('', FILE_SHARING_PORT))
 		sock.listen()
+
+		#confirm socket creation
+		resp = self.make_resp('shl', str(len('Done')), 'Done')
+		print(resp)
+		self.command_sock.send(resp)
 		#accept connection from sharing storage
 		conn, addr = sock.accept()
 		#get filesize and calculate number of blocks
