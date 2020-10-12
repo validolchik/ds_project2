@@ -206,7 +206,7 @@ class Storage(Thread):
 	'''
 	Move given file to specified directory
 	'''
-	def move(self, file, newpath):
+	def move(self, filename, newpath):
 		stream = os.popen("mv '" + HOME_DIR+filename+"'" + " '" + HOME_DIR+newpath + "'")
 		return stream.read()
 
