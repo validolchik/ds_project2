@@ -1,5 +1,6 @@
 import socket
 import os
+import sys
 
 SEPARATOR = "][" # separator for filename and size transferring
 BUFFER_SIZE = 2048 # send 4096 bytes each time step
@@ -15,7 +16,7 @@ BUFFER_SIZE = 2048 # send 4096 bytes each time step
 class Client:
 	def __init__(self):
 		# self.connect_to_name_server('localhost', 6235)
-		self.command_socket = self.connect_to_server('192.168.1.33', 6235)
+		self.command_socket = self.connect_to_server(str(sys.argv[1]), 6235)
 		self.user_interface()
 	
 	'''
@@ -266,6 +267,8 @@ class Client:
 			self.user_interface()
 		elif mes[0] == 'read' or mes[0] == 'write':
 			res = getattr(self, types[mes[0]])(mes[1])
+		elif mes[0] == 'commands':
+			self.user_interface()
 		else:
 			req = None
 			if len(mes) == 1:
