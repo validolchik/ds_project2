@@ -119,12 +119,12 @@ class NameServer():
 		listener = Thread(target = self.listen, daemon=True)
 		listener.start()
 		self.discover()
-		time.sleep(5)
+		time.sleep(1)
 		self.get_storage_catalogs()
 		while True:
-			time.sleep(30)
+			time.sleep(1)
 			self.discover()
-			time.sleep(5)
+			time.sleep(1)
 			print(self.storages)
 			self.get_storage_catalogs()
 			self.sync()
@@ -205,14 +205,9 @@ class NameServer():
 				for storage in contained:
 					if f in contained[storage]:
 						s2 = storage
+						self.sync(s, s2, f)
 
-				#order storages to share the file
-				#TODO
-
-
-		#print(contained)
-		#print(missing)
-		#print(extra)
+	def sync(self, storage1, storage2):
 		return 'Not yet'
 
 	'''
