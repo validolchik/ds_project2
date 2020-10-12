@@ -1,11 +1,17 @@
-<h1>DS course <br>
-Project 2 <br>
-Simple Distributed File System</h1><br>
+<h1>DS course  
+Project 2  
+Simple Distributed File System</h1>  
 
-All storages and name server supposed to be in a single LAN.<br>
-Port used:<br>
-Client-Name	6235<br>
-Name-Storage	3500<br>
-Storage Discovery	3501<br>
-Storage Discovery response	3502<br>
-File transfer	4000-4100<br>
+All storages and name server supposed to be in a single LAN.  
+Client has to be exposed to the open network.  
+
+
+How to start:  
+Storage:  
+```
+docker run -it -p 3504-3600:3504-3600 r0ach20/dfs_storage_server
+```
+Name:  
+```
+docker run -it -p 6235:6235 r0ach20/dfs_storage_server
+```
