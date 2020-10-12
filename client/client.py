@@ -197,7 +197,6 @@ class Client:
 				 'init': 'init'
 				 }
 		mes = command.split(' ')
-		print(mes)
 		# check if command in the commands list
 		if not mes[0] in types:
 			print("Write command from command list")
