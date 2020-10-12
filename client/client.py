@@ -266,6 +266,8 @@ class Client:
 			self.user_interface()
 		elif mes[0] == 'read' or mes[0] == 'write':
 			res = getattr(self, types[mes[0]])(mes[1])
+		elif mes[0] == 'commands':
+			self.user_interface()
 		else:
 			req = None
 			if len(mes) == 1:
