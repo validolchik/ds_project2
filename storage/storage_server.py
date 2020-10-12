@@ -70,7 +70,9 @@ class Storage(Thread):
 				'up':self.upload,
 				'inf':self.fsTree,
 				'init':self.init,
-				'rmf':self.delete
+				'rmf':self.delete,
+				'shl':self.share_listen,
+				'shu':self.share_upload
 				}
 
 		#split message and get request type
@@ -241,6 +243,66 @@ class Storage(Thread):
 		stream = os.popen('ls ' + HOME_DIR)
 		res = stream.read().replace(' ', '\n')
 		return res
+
+	'''
+	share file recieve
+	'''
+	def share_listen(self, filename):
+		#create a sharing socket
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+		sock.bind(('', FILE_SHARING_PORT))
+		#accept connection from sharing storage
+		conn, addr = sock.accept()
+		#get filesize and calculate number of blocks
+		file_size = int(conn.recv(BUFFER_SIZE).split(SEPARATOR)[0])
+		n_blocks = file_size//BUFFER_SIZE
+		extra_block = file_size - n_blocks*BUFFER_SIZE
+
+		#create file
+		f = open(filename, 'wb')
+
+		#recieve blocks and write them to file
+		for i in range(n_blocks):
+			block = sock.recv(BUFFER_SIZE)
+			f.write(block)
+		#get remaning data
+		block = sock.recv(extra_block)
+		f.write(block)
+		sock.close()
+		f.close()
+		return 'Done'
+
+	'''
+	share file upload
+	'''
+	def share_upload(self, dest, filename):
+
+		file_size = os.path.getsize(filename)
+		print(filename + ' requested size:' + str(file_size))
+		#caculate number of 2KB chunks in the file
+		#and size of remaining data
+		n_blocks = file_size//BUFFER_SIZE
+		extra_block = file_size - n_blocks*BUFFER_SIZE
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+		sock.connect((dest, FILE_SHARING_PORT))
+
+		sock.send(self.make_req(str(file_size)))
+
+		f = open(filename, 'rb')
+
+		for i in range(n_blocks):
+			block = f.read(BUFFER_SIZE)
+			sock.send(block)
+
+		block = f.read(extra_block)
+		sock.send(block)
+		sock.close()
+		f.close()
+		return 'Done'
+
 
 
 #listen for roll cals and answer name server's broadcasts

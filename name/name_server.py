@@ -205,10 +205,29 @@ class NameServer():
 				for storage in contained:
 					if f in contained[storage]:
 						s2 = storage
-						self.sync(s, s2, f)
+						self.share(s, s2, f)
 
-	def sync(self, storage1, storage2):
-		return 'Not yet'
+
+
+	'''
+	tell storage2 to share a file with storage1
+	'''
+	def share(self, storage1, storage2, filename):
+		#tell storage1 to listen
+		req1 = self.make_req('shl', f)
+		sock1 = socket.create_connection((storage1, COMMAND_PORT))
+		sock1.send(req1)
+		#tell storage2 to start sharing
+		req2 = self.make_req('shu', storage1, f)
+		sock2 = socket.create_connection((storage2, COMMAND_PORT))
+		sock2.send(req2)
+		#wait for responses
+		resp1 = self.get_response(sock1, 'shl')
+		sock1.close()
+		resp2 = self.get_response(sock2, 'shu')
+		sock2.close()
+		#done
+		print(storage1, 'now have', filename)
 
 	'''
 	assign client socket and start executing commands
