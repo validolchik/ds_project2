@@ -263,20 +263,22 @@ class Storage(Thread):
 		#accept connection from sharing storage
 		conn, addr = sock.accept()
 		#get filesize and calculate number of blocks
-		file_size = int(conn.recv(BUFFER_SIZE).decode('utf-8').split(SEPARATOR)[0])
-		n_blocks = file_size//BUFFER_SIZE
-		extra_block = file_size - n_blocks*BUFFER_SIZE
+		# file_size = int(conn.recv(BUFFER_SIZE).decode('utf-8').split(SEPARATOR)[0])
+		# n_blocks = file_size//BUFFER_SIZE
+		# extra_block = file_size - n_blocks*BUFFER_SIZE
 
 		#create file
 		f = open(filename, 'wb')
 
 		#recieve blocks and write them to file
-		for i in range(n_blocks):
-			block = conn.recv(BUFFER_SIZE)
+		while True:
+			block = conn.recv(1)
+			if not block:
+				break
 			f.write(block)
 		#get remaning data
-		block = conn.recv(extra_block)
-		f.write(block)
+		# block = conn.recv(extra_block)
+		# f.write(block)
 		conn.close()
 		sock.close()
 		f.close()
@@ -300,7 +302,7 @@ class Storage(Thread):
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 		sock.connect((dest, FILE_SHARING_PORT))
 
-		sock.send(self.make_req(str(file_size)))
+		# sock.send(self.make_req(str(file_size)))
 
 		f = open(filename, 'rb')
 
