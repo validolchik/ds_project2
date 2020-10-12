@@ -6,16 +6,8 @@ SEPARATOR = "][" # separator for filename and size transferring
 BUFFER_SIZE = 2048 # send 4096 bytes each time step
 
 
-
-# s = socket.socket()
-# s.connect((host, port))
-# s.send(f"{filename}{SEPARATOR}{filesize}".encode())
-# s.sendall(bytes_read)
-
-
 class Client:
 	def __init__(self):
-		# self.connect_to_name_server('localhost', 6235)
 		self.command_socket = self.connect_to_server(str(sys.argv[1]), 6235)
 		self.user_interface()
 	
@@ -27,13 +19,8 @@ class Client:
 		s = socket.socket()
 
 		# name server's host and port
-		# host = "188.130.155.153"
-		# host = 'localhost'
-		# port = 6235
 		print ("[+] Connecting to %s" % (server_ip), end = '')
 		print (":%d" % (server_port))
-		
-		# print(f"[+] Connecting to {server_ip}:{server_port}")
 		s.connect((server_ip, server_port))
 		print("[+] Connected.")
 		return s
@@ -102,7 +89,6 @@ class Client:
 			return "error"
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('', storage_port))
 		sock.listen()
 
@@ -140,7 +126,6 @@ class Client:
 		req = self.make_req('wrf', filename, str(file_size))
 		self.command_socket.send(req)
 
-		# resp = self.get_response(self.command_socket, 'wrf')
 		resp = self.command_socket.recv(4)
 		storage_port = resp.decode('utf-8')
 		if int(storage_port):
@@ -151,7 +136,6 @@ class Client:
 			return "error"
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		# sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('', storage_port))
 		sock.listen()
 
@@ -180,65 +164,16 @@ class Client:
 		return resp
 
 
-	''' 
-	Delete existing file from DFS
-	'''
-	def delete(self, filename):
-		print("delete called")
-
-	'''
-	Provide information about the file
-	'''
-	def info(self, filename):
-		print("info called")
-
-	'''
-	Create a copy of file
-	'''
-	def copy(self, filename):
-		print("copy called")
-
-	'''
-	Move given file to specified directory
-	'''
-	def move(self, file, newpath):
-		print("move called")
-
-	'''
-	Open directory
-	'''
-	def opendir(self, dir_path):
-		print("openddir called")
-
-	'''
-	List the files in the directory
-	'''
-	def readdir(self, dir_path):
-		print("readdir called")
-
-	'''
-	Create new directory
-	'''
-	def mkdir(self, dir_name):
-		print("mkdir")
-
-	'''
-	Delete directory
-	If any files exists, ask for confirmation
-	'''
-	def deldir(self, dirname):
-		print("deldir")
-
 	def list_commands(self):
 		print("List of available commands with short description:")
 		print("Initialize - 'init'\n"
-			  "Create empty file - 'create {filename}'\n"
-			  "Read file (download) - 'read {filename}'\n"
-			  "Write file (upload) - 'write {filename}'\n"
-			  "Delete file - 'delete {filename}'\n"
-			  "File info - 'info {filename}'\n"
-			  "Copy file - 'copy {filename}'\n"
-			  "File move - 'move {filename} {destination_path}'\n"
+			  "Create empty file - 'create {file}'\n"
+			  "Read file (download) - 'read {file}'\n"
+			  "Write file (upload) - 'write {file}'\n"
+			  "Delete file - 'delete {file}'\n"
+			  "File info - 'info {file}'\n"
+			  "Copy file - 'copy {file} {new_file_path}'\n"
+			  "File move - 'move {file} {new_file_path}'\n"
 			  "Open directory - 'cd {directory}'\n"
 			  "Read current directory - 'ls'\n"
 			  "Make directory - 'mkdir {directory}'\n"
@@ -274,14 +209,11 @@ class Client:
 		else:
 			req = None
 			if len(mes) == 1:
-				# res = getattr(self, types[mes[0]])()
 				req = self.make_req(types[mes[0]])
 			elif len(mes) == 2:
-				# res = getattr(self, types[mes[0]])(mes[1])
 				req = self.make_req(types[mes[0]], mes[1])
 			elif len(mes) == 3:
 				req = self.make_req(types[mes[0]], mes[1], mes[2])
-				# res = getattr(self, types[mes[0]])(mes[1], mes[2])
 			self.command_socket.send(req)
 			resp = self.get_response(self.command_socket, types[mes[0]])
 			print(resp)
@@ -306,7 +238,6 @@ class Client:
 
 def main():
 	client = Client()
-	# client.init()
 
 
 if __name__ == "__main__":
