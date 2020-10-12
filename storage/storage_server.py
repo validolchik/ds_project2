@@ -185,28 +185,29 @@ class Storage(Thread):
 	Delete existing file from DFS
 	'''
 	def delete(self, filename):
-		stream = os.popen('rm ' + HOME_DIR+filename)
+		print('removing ' + HOME_DIR+filename)
+		stream = os.popen("rm '" + HOME_DIR+filename+"'")
 		return stream.read()
 
 	'''
 	Provide information about the file
 	'''
 	def info(self, filename):
-		stream = os.popen('ls -l ' + HOME_DIR+filename)
+		stream = os.popen("ls '" + HOME_DIR+filename+"'")
 		return stream.read()
 
 	'''
 	Create a copy of file
 	'''
 	def copy(self, filename, newpath):
-		stream = os.popen('cp '+ HOME_DIR+filename + ' ' + HOME_DIR+newpath)
+		stream = os.popen("cp '" + HOME_DIR+filename+"'" + " '" + HOME_DIR+newpath + "'")
 		return stream.read()
 
 	'''
 	Move given file to specified directory
 	'''
 	def move(self, file, newpath):
-		stream = os.popen('mv '+ HOME_DIR+file + ' ' + HOME_DIR+newpath)
+		stream = os.popen("mv '" + HOME_DIR+filename+"'" + " '" + HOME_DIR+newpath + "'")
 		return stream.read()
 
 	'''
@@ -248,6 +249,7 @@ class Storage(Thread):
 	share file recieve
 	'''
 	def share_listen(self, filename):
+		filename = HOME_DIR+filename
 		#create a sharing socket
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -277,6 +279,8 @@ class Storage(Thread):
 	share file upload
 	'''
 	def share_upload(self, dest, filename):
+
+		filename = HOME_DIR+filename
 
 		file_size = os.path.getsize(filename)
 		print(filename + ' requested size:' + str(file_size))

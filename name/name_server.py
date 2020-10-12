@@ -194,7 +194,7 @@ class NameServer():
 				req = self.make_req('rmf', f)
 				command_sock = socket.create_connection((s, COMMAND_PORT))
 				command_sock.send(req)
-				resp = self.get_response(command_sock, 'crf')
+				resp = self.get_response(command_sock, 'rmf')
 				command_sock.close()
 
 		#tell storages to get missing files
