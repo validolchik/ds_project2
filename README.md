@@ -25,7 +25,10 @@ or
 ```
 python3 client.py (ip address of the name server)
 ```
-  
+
+## Architectural diagram
+![diag](https://github.com/validolchik/ds_project2/blob/main/images/DS2.png)
+
 ## Protocols  
 # Read and write  
 
