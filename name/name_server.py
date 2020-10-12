@@ -516,7 +516,7 @@ class NameServer():
 			c = self.curr_dir.children[i]
 			if c.data == filename:
 				file = c
-				index = 0
+				index = i
 
 		if file == None:
 			res = 'No such file exist'
@@ -593,7 +593,7 @@ class NameServer():
 			c = self.curr_dir.children[i]
 			if c.data == filename:
 				file = c
-				index = 0
+				index = i
 
 		if file == None:
 			res = 'No such file exist'
