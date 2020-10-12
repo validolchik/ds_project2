@@ -272,11 +272,12 @@ class Storage(Thread):
 
 		#recieve blocks and write them to file
 		for i in range(n_blocks):
-			block = sock.recv(BUFFER_SIZE)
+			block = conn.recv(BUFFER_SIZE)
 			f.write(block)
 		#get remaning data
-		block = sock.recv(extra_block)
+		block = conn.recv(extra_block)
 		f.write(block)
+		conn.close()
 		sock.close()
 		f.close()
 		return 'Done'
