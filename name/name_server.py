@@ -30,6 +30,12 @@ class Tree(object):
 		assert isinstance(node, Tree)
 		self.children.append(node)
 
+	def copy(self):
+		new_node = Tree(self.data, self.is_dir, self.parent, self.info)
+		new_node.children = self.children.copy()
+		new_node.info = self.info
+		return new_node
+
 
 
 CATALOG_FILE = 'catalog.txt'#catalog file
@@ -537,7 +543,7 @@ class NameServer():
 
 				#check if file with such name already exists
 				collision = None
-				for c in self.curr_dir.children:
+				for c in d.children:
 					if c.data == newname:
 						collision = c
 				copy = 1
@@ -546,7 +552,7 @@ class NameServer():
 				while collision != None:
 					newname = f"{newname.split('.')[0]}({copy}).{newname.split('.')[1]}"
 					collision = None
-					for c in self.curr_dir.children:
+					for c in d.children:
 						if c.data == newname:
 							collision = c
 
@@ -580,7 +586,7 @@ class NameServer():
 		else:
 			#move the file
 			new_file = file.copy()
-			del self.curr_dir.children[index]
+			
 
 			newname = filename
 			if newpath[-1] != '/':
@@ -598,18 +604,20 @@ class NameServer():
 							if dr.data == p and dr.is_dir:
 								d = dr
 
+
 				#check if file with such name already exists
 				collision = None
-				for c in self.curr_dir.children:
+				for c in d.children:
 					if c.data == newname:
 						collision = c
 				copy = 1
+
 
 				#if collision detected add a number at the end
 				while collision != None:
 					newname = f"{newname.split('.')[0]}({copy}).{newname.split('.')[1]}"
 					collision = None
-					for c in self.curr_dir.children:
+					for c in d.children:
 						if c.data == newname:
 							collision = c
 
@@ -617,6 +625,7 @@ class NameServer():
 				new_file.data = newname
 				new_file.parent = d
 				d.add_child(new_file)
+				del self.curr_dir.children[index]
 				res = 'Done'
 			except:
 				res = 'Error'
