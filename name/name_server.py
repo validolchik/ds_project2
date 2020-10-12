@@ -13,7 +13,7 @@ DISCOVER_PORT = 3501
 DISCOVER_RESPONSE_PORT = 3502#port to listen broadcasts response
 HOST = '0.0.0.0'#?
 
-FILE_PORTS = [4000,4100]
+FILE_PORTS = [i for i in range(3504,3600)]
 FILE_SHARE = 3503
 
 
