@@ -51,5 +51,5 @@ https://hub.docker.com/repository/docker/r0ach20/dfs_client
 # Name-server
 https://hub.docker.com/repository/docker/r0ach20/dfs_name_server
 # Storage-server
-https://hub.docker.com/repository/docker/r0ach20/dfs_name_server
+https://hub.docker.com/repository/docker/r0ach20/dfs_storage_server
 
