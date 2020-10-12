@@ -30,8 +30,10 @@ class Client:
 		# host = "188.130.155.153"
 		# host = 'localhost'
 		# port = 6235
-
-		print(f"[+] Connecting to {server_ip}:{server_port}")
+		print ("[+] Connecting to %s" % (server_ip), end = '')
+		print (":%d" % (server_port))
+		
+		# print(f"[+] Connecting to {server_ip}:{server_port}")
 		s.connect((server_ip, server_port))
 		print("[+] Connected.")
 		return s
