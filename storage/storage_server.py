@@ -251,7 +251,7 @@ class Storage(Thread):
 	def share_listen(self, filename):
 		filename = HOME_DIR+filename
 		#create a sharing socket
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 		sock.bind(('', FILE_SHARING_PORT))
 		sock.listen()
