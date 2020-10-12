@@ -560,6 +560,20 @@ class NameServer():
 				new_file.data = newname
 				new_file.parent = d
 				d.add_child(new_file)
+
+				#tell storage server to perform copy
+				oldpath = self.get_path(file)
+				newpath = self.get_path(new_file)
+				req = self.make_req('cpf', oldpath, newpath)
+				storage = random.choice(self.storages)
+				command_sock = socket.create_connection((storage, COMMAND_PORT))
+				command_sock.send(req)
+
+
+				#wait for confirmation
+				resp = self.get_response(command_sock, 'cpf')
+				command_sock.close()
+
 				res = 'Done'
 			except:
 				res = 'Error'
@@ -625,6 +639,19 @@ class NameServer():
 				new_file.data = newname
 				new_file.parent = d
 				d.add_child(new_file)
+				#tell storage server to perform copy
+				oldpath = self.get_path(file)
+				newpath = self.get_path(new_file)
+				req = self.make_req('mvf', oldpath, newpath)
+				storage = random.choice(self.storages)
+				command_sock = socket.create_connection((storage, COMMAND_PORT))
+				command_sock.send(req)
+
+
+				#wait for confirmation
+				resp = self.get_response(command_sock, 'mvf')
+				command_sock.close()
+
 				del self.curr_dir.children[index]
 				res = 'Done'
 			except:
