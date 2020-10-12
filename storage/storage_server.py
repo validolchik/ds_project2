@@ -258,7 +258,7 @@ class Storage(Thread):
 		#accept connection from sharing storage
 		conn, addr = sock.accept()
 		#get filesize and calculate number of blocks
-		file_size = int(conn.recv(BUFFER_SIZE).split(SEPARATOR)[0])
+		file_size = int(conn.recv(BUFFER_SIZE).decode('utf-8').split(SEPARATOR)[0])
 		n_blocks = file_size//BUFFER_SIZE
 		extra_block = file_size - n_blocks*BUFFER_SIZE
 
