@@ -19,11 +19,11 @@ Only one storage could be deployed on a single machine.
 After starting system is ready to use, and clients can connect to the name server.  
 Client:  
 ```
-docker run -it --net=host r0ach20/dfs_client (ip address of the name server)
+docker run -it --net=host r0ach20/dfs_client
 ```
 or
 ```
-python3 client.py (ip address of the name server)
+python3 client.py
 ```
 
 ## Architectural diagram
