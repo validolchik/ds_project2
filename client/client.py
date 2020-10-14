@@ -8,7 +8,7 @@ BUFFER_SIZE = 2048 # send 4096 bytes each time step
 
 class Client:
 	def __init__(self):
-		self.command_socket = self.connect_to_server(str(sys.argv[1]), 6235)
+		self.command_socket = self.connect_to_server(str(input()), 6235)
 		self.user_interface()
 	
 	'''
