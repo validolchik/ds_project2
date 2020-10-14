@@ -9,7 +9,7 @@ Client has to be exposed to the open network.
 ## How to start:  
 Storage:  
 ```
-docker run -it -p 3504-3600:3504-3600 r0ach20/dfs_storage_server
+docker run -it -p 3500-3600:3500-3600 r0ach20/dfs_storage_server
 ```
 Name:  
 ```
@@ -19,7 +19,7 @@ Only one storage could be deployed on a single machine.
 After starting system is ready to use, and clients can connect to the name server.  
 Client:  
 ```
-docker run -it -p 3500-3600:3500-3600 r0ach20/dfs_client (ip address of the name server)
+docker run -it -p 3500-3600:3500-3600 -p 6235:6235 r0ach20/dfs_client (ip address of the name server)
 ```
 or
 ```
